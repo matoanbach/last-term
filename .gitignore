@@ -21,5 +21,8 @@
 **/q1_O2
 **/q1_O3
 
+# Local build directories
+**/build/
+
 # Local reference material (keep untracked)
 DPS921/Gerassimos Barlas - Multicore and GPU programming_ an integrated approach (2022, Morgan Kaufmann Publishers) - libgen.li.pdf
