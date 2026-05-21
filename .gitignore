@@ -13,5 +13,8 @@
 **/*.o
 **/*.out
 
+# Local builds for labs
+**/wk3_threaded
+
 # Local reference material (keep untracked)
 DPS921/Gerassimos Barlas - Multicore and GPU programming_ an integrated approach (2022, Morgan Kaufmann Publishers) - libgen.li.pdf
