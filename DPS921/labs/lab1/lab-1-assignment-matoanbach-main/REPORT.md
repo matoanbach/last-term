@@ -1,4 +1,4 @@
-# Lab Activity 1 (5%) Report
+# Lab Activity 1 Report
 
 This report satisfies the Lab 1 requirements for:
 
@@ -45,6 +45,11 @@ Measure how compiler optimization flags affect runtime for the provided magnitud
 
 ### Build Configurations
 
+Step 1 (compiler macros):
+
+- `q1.cpp` was completed with preprocessor macros to report compiler name and version.
+- On this system the program reports: `Hello from the Clang compiler: 21.0.0 version`.
+
 | Optimization | Build command |
 |---|---|
 | O0 | `clang++ -O0 -std=c++17 q1.cpp -o q1_O0` |
@@ -54,6 +59,12 @@ Measure how compiler optimization flags affect runtime for the provided magnitud
 Inputs tested:
 
 - `n`: 1,000,000; 3,000,000; 10,000,000; 30,000,000
+
+Notes on optimization levels:
+
+- O0: optimization disabled (baseline)
+- O2: standard optimization
+- O3: aggressive optimization
 
 ### Results (Magnitude Calculation)
 
@@ -209,6 +220,11 @@ $$
 
 Timing used for speedup/efficiency: magnitude calculation time only.
 
+Inputs and thread counts:
+
+- Same `n` values as Q1 were tested: 1,000,000; 3,000,000; 10,000,000; 30,000,000.
+- Threads tested: 1, 2, 4, 8.
+
 Note on measurement resolution:
 
 - Output is in milliseconds; for small `n`, some multi-threaded runs measure as `0 ms`, producing infinite speedup.
@@ -226,6 +242,8 @@ Results (from `q2_summary.csv`):
 | 30,000,000 | 2 | 16.3333 | 2.2041 | 1.1020 |
 | 30,000,000 | 4 | 8.6667 | 4.1538 | 1.0385 |
 | 30,000,000 | 8 | 6.6667 | 5.4000 | 0.6750 |
+
+All results (including small `n`) are recorded in `q2_summary.csv`.
 
 Worked example (how to compute speedup/efficiency):
 
