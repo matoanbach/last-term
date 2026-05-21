@@ -1,0 +1,17 @@
+.DS_Store
+**/.DS_Store
+
+# Editor / tool logs
+**/excalidraw.log
+
+# Office temp files
+**/~$*.docx
+
+# Local build artifacts / binaries
+**/*_test
+**/hello
+**/*.o
+**/*.out
+
+# Local reference material (keep untracked)
+DPS921/Gerassimos Barlas - Multicore and GPU programming_ an integrated approach (2022, Morgan Kaufmann Publishers) - libgen.li.pdf
