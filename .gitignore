@@ -24,5 +24,13 @@
 # Local build directories
 **/build/
 
+# Avoid committing dependencies / local project state
+**/node_modules/
+**/.expo/
+**/.vscode/
+
+# Avoid committing nested git repos (course starter code sometimes includes these)
+**/.git/
+
 # Local reference material (keep untracked)
 DPS921/Gerassimos Barlas - Multicore and GPU programming_ an integrated approach (2022, Morgan Kaufmann Publishers) - libgen.li.pdf
