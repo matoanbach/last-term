@@ -1,0 +1,63 @@
+// pop songs
+[
+ {
+   id:1,
+   title: "Tears",
+   artist: "Sabrina Carpenter",
+   imageURL: "https://charts-static.billboard.com/img/2014/06/sabrina-carpenter-l0r-344x344.jpg",
+   duration:3,
+   isFavorite:false,
+ },
+ {
+   id:2,
+   title: "Golden",
+   artist: "HUNTR/X",
+   imageURL: "https://charts-static.billboard.com/img/2025/07/huntrxejaeaudreynunareiami-o2t-golden-ozh-180x180.jpg",
+   duration:5,
+   isFavorite:true,
+ },
+ {
+   id:3,
+   title: "Back To Friends",
+   artist: "sombr",
+   imageURL: "https://charts-static.billboard.com/img/2025/04/sombr-kpn-backtofriends-zqh-180x180.jpg",
+   duration:4,
+   isFavorite:false,
+ }
+]
+
+// rap songs
+[
+ {
+   id:103,
+   title: "Changes",
+   artist: "2Pac",
+   imageURL: "https://charts-static.billboard.com/img/1992/02/2pac-u29-344x344.jpg",
+   duration:7,
+   isFavorite:true,
+ },
+ {
+   id: 82,
+   title: "Denial is a River",
+   artist: "Doechii",
+   imageURL: "https://charts-static.billboard.com/img/2021/05/doechii-h8h-344x344.jpg",
+   duration:3,
+   isFavorite:true,
+ },
+ // {
+ //   id: 75,
+ //   title: "Lose Yourself",
+ //   artist: "Eminem",
+ //   imageURL: "https://charts-static.billboard.com/img/1998/10/eminem-d78-344x344.jpg",
+ //   duration:4,
+ //   isFavorite:false,
+ // }, 
+ // {
+ //   id: 4,
+ //   title: "Alright",
+ //   artist: "Kendrick Lamar",
+ //   imageURL: "https://charts-static.billboard.com/img/2010/10/kendrick-lamar-2un-344x344.jpg",
+ //   duration:5,
+ //   isFavorite:true,
+ // }
+]
