@@ -547,7 +547,7 @@ $$
 Cross-multiplying and inverse z-transforming:
 
 $$
-y(n)+y(n-1)+0.5y(n-2)=x(n)+x(n-1).
+y(n)+y(n-1)+0.5y(n-2)=x(n)+x(n-2).
 $$
 
 ### (c) Steady-state response $y_{ss}(n)$

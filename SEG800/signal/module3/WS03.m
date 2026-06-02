@@ -151,6 +151,20 @@ zplane(bh,ah); grid on; title('[DSP] P3.2(h) finite-length sequence');
 
 % (e) pole locations are at z=a e^{\pm j\omega_0} (double poles). Zeros are given by the numerator.
 
+% MATLAB: DSP P3.2(e) example pole-zero sketch
+% Pick a numeric example to sketch the pole-zero pattern.
+a_val = 0.8;
+w0 = pi/4;
+c0 = cos(w0);
+
+% X(z) = (a c z^{-1} - 2a^2 z^{-2} + a^3 c z^{-3}) / (1 - 2ac z^{-1} + a^2 z^{-2})^2
+b32e = [0, a_val*c0, -2*a_val^2, a_val^3*c0];
+a32e = conv([1, -2*a_val*c0, a_val^2], [1, -2*a_val*c0, a_val^2]);
+
+figure('Name','[DSP] P3.2(e) zplane');
+zplane(b32e,a32e); grid on;
+title(sprintf('[DSP] P3.2(e) pole-zero (a=%.2f, w0=%.2f rad)', a_val, w0));
+
 %% [DSP] P3.3 (Z-transforms and ROC)
 % Given signals:
 %
@@ -201,6 +215,22 @@ subplot(4,1,4); stem(n,x4,'filled'); grid on; title('[DSP] P3.3(d) x_4(n)=x_1(-n
 %   PFE gives:
 %     X(z)= 4/(1+z^{-1}) + 0/(1+0.5z^{-1}) - 4/(1+0.5z^{-1})^2
 %   => x(n)=4(-1)^n u(n) + 8(n+1)(-0.5)^{n+1}u(n)
+
+% MATLAB verification (P3.5(a))
+b5a = [1, -1, -4, 4];
+a5a = [1, -11/4, 13/8, -1/4];
+[delta5,n5] = impseq(0,0,15);
+x5a_filt = filter(b5a,a5a,delta5);
+x5a_form = -16*delta5 - 10*(0.5).^n5 + 27*(0.25).^n5;
+err35a = max(abs(x5a_filt - x5a_form))
+
+% MATLAB verification (P3.5(b))
+b5b = [0, 0, 1];
+a5b = [1, 2, 1.25, 0.25];
+[delta5,n5] = impseq(0,0,15);
+x5b_filt = filter(b5b,a5b,delta5);
+x5b_form = 4*(-1).^n5 + 8*(n5+1).*((-0.5).^(n5+1));
+err35b = max(abs(x5b_filt - x5b_form))
 
 %% [DSP] P3.14 (Analytical solutions)
 % Determine the causal x(n).
@@ -275,13 +305,57 @@ subplot(3,1,3); stem(n,xh,'filled'); grid on; title('[DSP] P3.14(h) x(n) from PF
 %   H(z)=\sum_{k=1}^9 k z^{-k}
 %   y(n)=\sum_{k=1}^9 k x(n-k)
 
+% MATLAB: P3.7(a) pole-zero + output verification
+b7a = [2];
+a7a = [1, -0.5];
+figure('Name','[DSP-SM] P3.7 pole-zero');
+subplot(1,2,1);
+zplane(b7a,a7a); grid on; title('[DSP-SM] P3.7(a) pole-zero');
+
+N7 = 30; n7 = 0:N7;
+x7 = (0.25).^n7;
+y7 = filter(b7a,a7a,x7);
+y7_form = 4*(0.5).^n7 - 2*(0.25).^n7;
+err37a = max(abs(y7 - y7_form))
+
+figure('Name','[DSP-SM] P3.7(a) output');
+stem(n7,y7,'filled'); grid on; title('[DSP-SM] P3.7(a) y(n)'); xlabel('n');
+
+% MATLAB: P3.7(b) pole-zero + output
+hb7 = 0:9;
+ab7 = 1;
+subplot(1,2,2);
+zplane(hb7,ab7); grid on; title('[DSP-SM] P3.7(b) pole-zero');
+
+y7b = filter(hb7,ab7,x7);
+figure('Name','[DSP-SM] P3.7(b) output');
+stem(n7,y7b,'filled'); grid on; title('[DSP-SM] P3.7(b) y(n)'); xlabel('n');
+
 %% [DSP-SM] P3.8
 % Given zeros at z=\pm j and poles at -1/2 \pm j/2, with H(1)=0.8.
 %   H(z)=K (z^2+1)/(z^2+z+0.5)
 %   K from H(1)=0.8 => K=1
 %   H(z)=(z^2+1)/(z^2+z+0.5), ROC |z|>1/sqrt(2)
-%   Difference eq: y(n)+y(n-1)+0.5y(n-2)=x(n)+x(n-1)
+%   Difference eq: y(n)+y(n-1)+0.5y(n-2)=x(n)+x(n-2)
 %   For x(n)=(1/sqrt(2))sin(pi n/2)u(n): y_ss(n)=0 and y_tr(n)=sqrt(2)(1/sqrt(2))^n sin(0.75 pi n)u(n)
+
+% MATLAB: P3.8 pole-zero, H(0) check, and response check
+b8 = [1, 0, 1];
+a8 = [1, 1, 0.5];
+figure('Name','[DSP-SM] P3.8 pole-zero');
+zplane(b8,a8); grid on; title('[DSP-SM] P3.8 pole-zero');
+
+H0 = sum(b8)/sum(a8)  % H(e^{j0})
+
+N8 = 50; n8 = 0:N8-1;
+x8 = (1/sqrt(2))*sin(pi*n8/2);
+y8 = filter(b8,a8,x8);
+y8_tr = sqrt(2)*(1/sqrt(2)).^n8 .* sin(3*pi*n8/4);
+err38 = max(abs(y8 - y8_tr))
+
+figure('Name','[DSP-SM] P3.8 response');
+subplot(2,1,1); stem(n8(1:30),y8(1:30),'filled'); grid on; title('[DSP-SM] P3.8 y(n)');
+subplot(2,1,2); stem(n8(1:30),y8_tr(1:30),'filled'); grid on; title('[DSP-SM] P3.8 transient formula');
 
 %% [DSP] P3.35 (Analytical solution)
 % h) h(n) = (1/2)^n u(n), x(n)=(n+1)(1/4)^n u(n)
