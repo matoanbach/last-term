@@ -1,0 +1,388 @@
+\documentclass[8pt]{extarticle}
+
+\usepackage[margin=0.30in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{multicol}
+\usepackage{enumitem}
+\usepackage{titlesec}
+\usepackage[protrusion=true,expansion=false]{microtype}
+
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0.5pt}
+\setlength{\columnsep}{0.16in}
+\setlist[itemize]{nosep,leftmargin=*}
+\setlist[enumerate]{nosep,leftmargin=*}
+\renewcommand{\arraystretch}{0.92}
+\setlength{\abovedisplayskip}{2pt}
+\setlength{\belowdisplayskip}{2pt}
+\setlength{\abovedisplayshortskip}{1pt}
+\setlength{\belowdisplayshortskip}{1pt}
+\titleformat{\section}{\large\bfseries}{}{0pt}{}[\vspace{-3pt}\hrule\vspace{3pt}]
+\titleformat{\subsection}{\normalsize\bfseries}{}{0pt}{}
+\titlespacing*{\section}{0pt}{3pt}{1pt}
+\titlespacing*{\subsection}{0pt}{2pt}{1pt}
+
+\newcolumntype{Y}{>{\raggedright\arraybackslash}X}
+
+\begin{document}
+
+\begin{center}
+    {\Large \textbf{SEG800 Image Processing Cheatsheet}}\\[-1pt]
+    {\small Based on Module 7 and Module 8 study summaries}
+\end{center}
+
+\begin{multicols}{2}
+
+\section{Concept Study Notes}
+
+\begin{tabularx}{\linewidth}{@{}p{0.38\linewidth}Y@{}}
+\toprule
+\textbf{Concept} & \textbf{Reminder} \\
+\midrule
+Digital image processing & Processing a digital image using a digital computer. \\
+Human vision: cones & Cones handle bright-light and color vision. \\
+Enhancement vs restoration & Enhancement is subjective; restoration uses mathematical/probabilistic models. \\
+Affine transformations & Preserve parallelism. \\
+Quantization & Converts continuous brightness values into discrete levels. \\
+Weber ratio & Measures brightness discrimination. \\
+Digitizer & Converts analog signals into digital form. \\
+Image energy source & Most digital images use the electromagnetic spectrum. \\
+Point operation & Depends only on the corresponding input pixel. \\
+Negative transformation & For 8-bit images: $s = 255 - z$. \\
+Neighborhood operation & Image smoothing uses neighboring pixels. \\
+Geometric transformation & Changes pixel locations. \\
+Histogram equalization & Enhances contrast by spreading/flattening the histogram. \\
+Gamma correction & Mainly changes brightness/intensity perception. \\
+Translation & $u = x + t_x$, $v = y + t_y$. \\
+\bottomrule
+\end{tabularx}
+
+\section{Core Definitions}
+
+\textbf{Image:} a 2D function $f(x,y)$, where $x,y$ are spatial coordinates and $f(x,y)$ is intensity or gray level.
+
+\textbf{Digital image:} an image where $x$, $y$, and intensity values are finite and discrete.
+
+\textbf{Pixel:} one image element with location $(x,y)$ and intensity $f(x,y)$.
+
+\textbf{Image enhancement:} improves an image for a specific application; subjective.
+
+\textbf{Image restoration:} improves an image using objective mathematical/probabilistic degradation models.
+
+\textbf{Sampling:} converts continuous spatial coordinates into discrete coordinates; related to spatial resolution.
+
+\textbf{Quantization:} converts continuous brightness/intensity values into discrete digital values; related to intensity resolution.
+
+\textbf{Point operation:} each output pixel depends only on the same input pixel.
+\[
+I_{out}(i,j)=f(I_{in}(i,j))
+\]
+
+\textbf{Neighborhood operation:} output depends on a pixel and its neighbors. Example: smoothing/blurring.
+
+\textbf{Geometric transformation:} maps $(x,y)$ to $(u,v)$; changes locations, not intensity values.
+
+\textbf{Affine transformation:} preserves parallelism. Examples: translation, scaling, rotation, shear.
+
+\section{Human Vision}
+
+\textbf{Cones:} bright-light/photopic vision; sensitive to color.\\
+\textbf{Rods:} dim-light/scotopic vision; sensitive to low illumination.\\
+\textbf{Blind spot:} area with optic nerve and no receptors.
+
+\section{Formula Box}
+
+\textbf{Weber ratio}
+\[
+\frac{\Delta I_c}{I}
+\]
+$\Delta I_c$ is the minimum detectable change in illumination; $I$ is background illumination.
+
+\textbf{Brightness levels}
+\[
+2^b
+\]
+$b$ is number of bits. Example: $8$ bits gives $2^8=256$ levels.
+
+\textbf{Negative transformation}
+\[
+s=255-z
+\]
+$z$ is input intensity; $s$ is output intensity.
+
+\textbf{Gamma correction}
+\[
+s=cr^\gamma
+\]
+$r$ is input intensity, $s$ is output intensity, $c$ is a constant, and $\gamma$ is gamma.
+
+\textbf{Lens formula}
+\[
+\frac{1}{z_o}+\frac{1}{z_i}=\frac{1}{f}
+\]
+$z_o$ is object distance, $z_i$ is image distance, and $f$ is focal length.
+
+\textbf{Histogram}
+\[
+h(r_k)=\text{number of pixels with intensity } r_k
+\]
+
+\textbf{Normalized histogram}
+\[
+p(r_k)=\frac{h(r_k)}{MN}
+\]
+
+\textbf{Histogram equalization}
+\[
+s_k=T(r_k)=(L-1)\sum_{j=0}^{k}p(r_j)
+\]
+$L$ is the number of intensity levels.
+
+\section{Geometric Transform Formulas}
+
+Homogeneous coordinate form:
+\[
+\begin{bmatrix}u\\v\\1\end{bmatrix}
+=
+\begin{bmatrix}
+h_{11}&h_{12}&h_{13}\\
+h_{21}&h_{22}&h_{23}\\
+h_{31}&h_{32}&h_{33}
+\end{bmatrix}
+\begin{bmatrix}x\\y\\1\end{bmatrix}
+\]
+
+\textbf{Translation}
+\[
+u=x+t_x,\qquad v=y+t_y
+\]
+\[
+\begin{bmatrix}1&0&t_x\\0&1&t_y\\0&0&1\end{bmatrix}
+\]
+
+\textbf{Scaling}
+\[
+u=s_xx,\qquad v=s_yy
+\]
+\[
+\begin{bmatrix}s_x&0&0\\0&s_y&0\\0&0&1\end{bmatrix}
+\]
+
+\textbf{Rotation, counterclockwise}
+\[
+u=x\cos\theta-y\sin\theta,\qquad v=x\sin\theta+y\cos\theta
+\]
+\[
+\begin{bmatrix}\cos\theta&-\sin\theta&0\\\sin\theta&\cos\theta&0\\0&0&1\end{bmatrix}
+\]
+
+\textbf{Shear}
+\[
+u=x+y\,sh_x,\qquad v=y+x\,sh_y
+\]
+\[
+\begin{bmatrix}1&sh_x&0\\sh_y&1&0\\0&0&1\end{bmatrix}
+\]
+
+\section{Pixel Adjacency}
+
+For $p=(x,y)$:
+\[
+N_4(p)=\{(x+1,y),(x-1,y),(x,y+1),(x,y-1)\}
+\]
+\[
+N_D(p)=\{(x+1,y+1),(x+1,y-1),(x-1,y+1),(x-1,y-1)\}
+\]
+\[
+N_8(p)=N_4(p)\cup N_D(p)
+\]
+
+Two pixels $p$ and $q$ are \textbf{m-adjacent} if either:
+\[
+q\in N_4(p)
+\]
+or $q\in N_D(p)$ and $N_4(p)\cap N_4(q)$ has no pixels with values from $V$.
+
+Checklist: confirm both pixels are in foreground set $V$; check 4-neighbor first; for diagonal pixels, inspect common 4-neighbors.
+
+\section{Optics / Lens Formula}
+
+\[
+\frac{1}{z_o}+\frac{1}{z_i}=\frac{1}{f}
+\]
+
+Solving for object distance:
+\[
+\frac{1}{z_o}=\frac{1}{f}-\frac{1}{z_i}
+\]
+\[
+z_o=\frac{1}{\frac{1}{f}-\frac{1}{z_i}}
+\]
+
+Keep all distances in the same unit before calculating. Convert at the end if needed.
+
+\section{Homography Composition}
+
+If applying scale $\rightarrow$ rotate $\rightarrow$ translate, multiply in reverse application order:
+\[
+H=TRS
+\]
+
+Apply using:
+\[
+\begin{bmatrix}u\\v\\1\end{bmatrix}=H\begin{bmatrix}x\\y\\1\end{bmatrix}
+\]
+
+Geometric transformations move pixel locations but do not directly change pixel intensity values. Raster images may need interpolation or rounding.
+
+\section{Extra Study Topics}
+
+\textbf{Processing levels}
+
+\begin{tabularx}{\linewidth}{@{}p{0.28\linewidth}p{0.16\linewidth}Y Y@{}}
+\toprule
+\textbf{Level} & \textbf{Input} & \textbf{Output} & \textbf{Examples} \\
+\midrule
+Image processing & Image & Image & Noise reduction, contrast enhancement, sharpening \\
+Image analysis & Image & Features & Edges, contours, objects \\
+Computer vision & Image & Meaning & Recognition, scene understanding \\
+\bottomrule
+\end{tabularx}
+
+\textbf{Image acquisition pipeline}
+\begin{align*}
+&\text{Energy source}\rightarrow\text{Scene/object}\rightarrow\text{Imaging system}\\
+&\rightarrow\text{Image plane}\rightarrow\text{Digitized image}
+\end{align*}
+
+Most images use the electromagnetic spectrum: visible light, X-ray, infrared, ultraviolet, microwave, and radio waves. Other sources include acoustic waves, ultrasonic waves, electron beams, and synthetic images.
+
+\textbf{Digital image types}
+
+\begin{tabularx}{\linewidth}{@{}p{0.32\linewidth}Y@{}}
+\toprule
+\textbf{Type} & \textbf{Meaning} \\
+\midrule
+Binary & 2D array of 0s and 1s \\
+Grayscale & 2D array of brightness values, often 0--255 or normalized 0--1 \\
+Color & Usually three 2D arrays, such as R, G, B \\
+Multispectral & Includes frequencies beyond visible light \\
+Depth map & Stores distance/depth information \\
+\bottomrule
+\end{tabularx}
+
+\textbf{Brightness adaptation:} the eye changes sensitivity depending on current light level. It adapts to a large intensity range, but not all at once.
+
+\textbf{Weber ratio interpretation}
+\[
+\text{Large Weber ratio}\rightarrow\text{poor brightness discrimination}
+\]
+\[
+\text{Small Weber ratio}\rightarrow\text{better brightness discrimination}
+\]
+
+\textbf{Visual perception effects:} Mach band effect, simultaneous contrast, optical illusions.
+
+\textbf{Saturation:} highest intensity value beyond which values are clipped.\\
+\textbf{Noise:} random unwanted variation in image intensity.
+
+\textbf{Region terms:} a path is a sequence of connected pixels; a connected set/region has paths between pixels inside it; a boundary/contour contains pixels adjacent to outside pixels.
+
+\textbf{Distance measures} for $p=(x,y)$ and $q=(u,v)$:
+\[
+D_e(p,q)=\sqrt{(x-u)^2+(y-v)^2}
+\]
+\[
+D_4(p,q)=|x-u|+|y-v|
+\]
+\[
+D_8(p,q)=\max(|x-u|,|y-v|)
+\]
+
+\textbf{Linear operation property}
+\[
+H[af_1(x,y)+bf_2(x,y)]=aH[f_1(x,y)]+bH[f_2(x,y)]
+\]
+
+\textbf{Image arithmetic}
+\[
+s=f+g,\quad d=f-g,\quad p=f\times g,\quad v=\frac{f}{g}
+\]
+
+\textbf{Linear blend / weighted addition}
+\[
+\text{dst}=\alpha\,\text{img}_1+\beta\,\text{img}_2+\gamma
+\]
+$\alpha$ and $\beta$ are image weights; $\gamma$ is a brightness offset.
+
+\textbf{Brightness and contrast point operations}
+\[
+I_{out}(i,j)=I_{in}(i,j)+b
+\]
+\[
+I_{out}(i,j)=aI_{in}(i,j)
+\]
+Adding changes brightness; multiplying changes contrast.
+
+\textbf{Contrast stretching:} expands intensity values to improve contrast.
+
+\textbf{Thresholding:} separates pixels into dark/light groups.
+\[
+\text{pixel}\ge\text{threshold}\rightarrow\text{white},\qquad
+\text{pixel}<\text{threshold}\rightarrow\text{black}
+\]
+
+\textbf{Gamma rule}
+\[
+\gamma<1\rightarrow\text{brighter},\qquad \gamma>1\rightarrow\text{darker}
+\]
+
+\textbf{Transformation families}
+
+\begin{tabularx}{\linewidth}{@{}p{0.34\linewidth}Y@{}}
+\toprule
+\textbf{Transformation} & \textbf{Preserves} \\
+\midrule
+Translation & Orientation \\
+Rigid / Euclidean & Lengths \\
+Similarity & Angles \\
+Affine & Parallelism \\
+Projective & Straight lines; parallel lines may not stay parallel \\
+\bottomrule
+\end{tabularx}
+
+\textbf{Interpolation:} assigns intensity when transformed locations are non-integer.
+
+\begin{tabularx}{\linewidth}{@{}p{0.34\linewidth}Y@{}}
+\toprule
+\textbf{Type} & \textbf{Meaning} \\
+\midrule
+Nearest-neighbor & Closest pixel; fast but blocky \\
+Bilinear & Nearby pixels; smoother \\
+Bicubic & More neighbors; smoother but slower \\
+\bottomrule
+\end{tabularx}
+
+\section{Quick Memory Tips}
+
+\begin{itemize}
+    \item Enhancement = subjective; restoration = model-based.
+    \item Cones = color/bright light; rods = dim light.
+    \item Sampling = spatial coordinates; quantization = intensity values.
+    \item Point operation = same pixel only; neighborhood operation = pixel plus neighbors.
+    \item Geometric transformation = changes locations; pixel value stays the same.
+    \item Affine preserves parallelism; projective preserves straight lines.
+    \item Histogram equalization = contrast enhancement.
+    \item Gamma correction = brightness perception; $\gamma<1$ brighter, $\gamma>1$ darker.
+    \item Negative image: $s=255-z$.
+    \item Translation: add $t_x$ and $t_y$.
+    \item Large Weber ratio = poor brightness discrimination; small Weber ratio = better discrimination.
+\end{itemize}
+
+\end{multicols}
+
+\end{document}
