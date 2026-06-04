@@ -152,6 +152,16 @@ Students discuss:
 
 This is extremely valuable conceptually.
 
+### Part 2 Explanation / Code Link
+
+For Part 2, the collective communication version is shown in `part2_scatter_gather.cpp`.
+
+- Task 2.1: The manual distribution logic is replaced with `MPI_Scatter`, which automatically sends equal-sized chunks from the root process to all processes.
+- Task 2.2: The manual collection logic is replaced with `MPI_Gather`, which automatically collects the processed local chunks back to rank 0.
+- Task 2.3: Compared with the manual version, the collective version uses fewer lines of code, is easier to read, and is easier to scale because the communication pattern is expressed directly through MPI collectives instead of many explicit sends and receives.
+
+In both versions, every process still participates in the computation, but the collective version is cleaner and reduces the chance of mismatched communication logic.
+
 ## Part 3: MPI Program Structure Analysis (15 minutes)
 
 ### Task 3.1 – Read and Analyze the Code
