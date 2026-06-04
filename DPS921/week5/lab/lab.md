@@ -172,25 +172,25 @@ Answer the following:
 
 **Q1. What is the role of the root process (rank 0)?**
 
-____________________________________
+Rank 0 acts as the coordinator. It allocates and initializes the full input array, distributes equal-sized chunks to all processes, collects the reduced results and timing information, and prints the final output summary.
 
 **Q2. What is the role of the worker process (rank > 0)?**
 
-_________________________________________
+Each worker process receives its own chunk of the input data, performs the local computation on that chunk only, counts its local results, and contributes those local values back through the MPI collective operations.
 
 **Q3. What is stored in:**
 
 **data (on root only)?**
 
-____________________________________________
+`data` stores the full original input array on rank 0 before it is split and distributed to the other processes.
 
 **local (on all processes)?**
 
-______________________________________________
+`local` stores the local chunk assigned to each process. Every process works only on the values inside its own `local` buffer.
 
 **result (on root only)?**
 
-_____________________________________________________
+There is no explicit `result` array in the current `q2parallel.c`. Instead, rank 0 receives the final reduced count and the gathered timing information. In a scatter-gather version, `result` would store the full processed array on the root process.
 
 ---
 
