@@ -95,6 +95,16 @@ Students modify their existing MPI program from Week#4.
 - gather-like behavior
 - manual coordination
 
+### Part 1 Explanation / Code Link
+
+For Part 1, the manual point-to-point version is shown in `part1_manual_send_recv.cpp`.
+
+- Task 1.1: Rank 0 creates the full input array and sends one chunk to each worker using `MPI_Send`. The workers receive their assigned chunk using `MPI_Recv`.
+- Task 1.2: After receiving its chunk, each process performs local computation on its own local buffer only. In this example, each value is incremented by 1.
+- Task 1.3: After local processing, each worker sends its processed chunk back to rank 0 using `MPI_Send`. Rank 0 receives all processed chunks using `MPI_Recv` and reconstructs the final result array.
+
+This version demonstrates the communication pattern clearly, but it requires more manual coordination because the root process must explicitly manage every send and receive.
+
 ## Part 2: Collective Communication (45-50 minutes)
 
 ### Task 2.1 – Replace Manual Distribution with MPI_Scatter
