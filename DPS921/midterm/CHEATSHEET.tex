@@ -1,0 +1,373 @@
+\documentclass[9pt]{extarticle}
+
+\usepackage[letterpaper,margin=0.28in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath,amssymb}
+\usepackage{multicol}
+\usepackage{enumitem}
+\usepackage{array}
+\usepackage{listings}
+\usepackage{titlesec}
+\usepackage[protrusion=true,expansion=false]{microtype}
+
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0.5pt}
+\setlength{\columnsep}{0.18in}
+\setlist[itemize]{nosep,leftmargin=*}
+\setlength{\abovedisplayskip}{2pt}
+\setlength{\belowdisplayskip}{2pt}
+\setlength{\abovedisplayshortskip}{1pt}
+\setlength{\belowdisplayshortskip}{1pt}
+\titleformat{\section}{\normalsize\bfseries}{}{0pt}{}[\vspace{-2pt}\hrule\vspace{2pt}]
+\titleformat{\subsection}{\small\bfseries}{}{0pt}{}
+\titlespacing*{\section}{0pt}{2pt}{1pt}
+\titlespacing*{\subsection}{0pt}{1pt}{0.5pt}
+
+\newcommand{\code}[1]{\texttt{\detokenize{#1}}}
+\newcommand{\qa}[2]{\textbf{Q:} #1\\\textbf{A:} #2\par\vspace{1pt}}
+\newcommand{\tighttable}[1]{\vspace{1pt}{\scriptsize #1}\vspace{1pt}}
+\newcommand{\subhead}[1]{\textbf{#1}\par}
+
+\lstset{
+  basicstyle=\ttfamily\scriptsize,
+  breaklines=true,
+  columns=fullflexible,
+  keepspaces=true,
+  showstringspaces=false,
+  aboveskip=1pt,
+  belowskip=1pt,
+  frame=single,
+  framerule=0.2pt,
+  framesep=2pt
+}
+
+\begin{document}
+\raggedright
+\footnotesize
+
+\begin{center}
+{\Large \textbf{DPS921 Midterm Cheatsheet}}\\[-2pt]
+{\small Comprehensive Q/A from concept, analysis, and programming/computation source files}
+\end{center}
+
+\begin{multicols}{2}
+
+\section{Week 1}
+\subhead{Concept}
+\qa{What is the era of multicore machines, and why did software have to change?}{Clock-speed scaling hit power, heat, and diminishing-return limits, so hardware vendors added cores instead. Programs no longer speed up automatically; developers must expose parallelism, manage synchronization, balance work, and design for scalability.}
+
+\qa{How do shared-memory and distributed-memory systems differ, and why does this matter?}{Shared memory uses threads that see one address space, so communication happens through shared variables and synchronization. Distributed memory uses separate processes with private memory, so communication is explicit, usually with MPI. The machine model determines decomposition, data placement, and communication cost.}
+
+\qa{How does Gustafson-Barsis differ from Amdahl's Law?}{Amdahl assumes fixed-size problems and says the serial fraction caps speedup: \(S(p)=1/((1-\alpha)+\alpha/p)\). Gustafson assumes scaled workloads and gives \(S(p)=(1-\alpha)+\alpha p\), so larger machines can solve larger problems efficiently. Amdahl is pessimistic for fixed work; Gustafson is more optimistic for scaled work.}
+
+\tighttable{\begin{tabular}{@{}p{0.27\columnwidth}p{0.6\columnwidth}@{}}
+Model & Best fit \\
+Amdahl & Fixed-size workload; serial part limits speedup \\
+Gustafson & Scaled workload; more processors solve more work \\
+\end{tabular}}
+
+\subhead{Analysis}
+\qa{Why might a single-core application gain little on a multicore processor?}{Common causes are limited parallelism, a large serial fraction, synchronization overhead, load imbalance, data dependencies, thread management overhead, memory bandwidth limits, and cache contention. Good next step: profile first, then refactor the sequential or contended hot spots.}
+
+\tighttable{\begin{tabular}{@{}p{0.26\columnwidth}p{0.61\columnwidth}@{}}
+Factor & Impact \\
+Serial work & Caps possible speedup \\
+Locks/barriers & Threads wait instead of compute \\
+Imbalance & Some cores go idle early \\
+Bandwidth/cache & Contention lowers scaling \\
+\end{tabular}}
+
+\qa{Can a program with a large serial fraction still scale to thousands of cores?}{Under Amdahl, usually no: a large serial fraction causes speedup saturation. Under Gustafson, possibly yes if the workload scales with processor count so the parallel part grows and the serial part becomes a smaller fraction of total time. The claim is weak for fixed-size problems and stronger for scaled workloads.}
+
+\subhead{Programming}
+\qa{A sequential program takes 120 s and a parallel version takes 30 s on 8 cores. What are speedup and efficiency?}{Use \(S=T_{seq}/T_p\) and \(E=S/p\). Here \(S=120/30=4\) and \(E=4/8=0.5=50\%\). Interpretation: useful speedup, but sublinear, so overhead or serial work remains.}
+
+\qa{Given speedups 1.0, 1.8, 3.2, 5.0 on 1, 2, 4, 8 cores, what is the scalability story?}{Efficiencies are \(1.00\), \(0.90\), \(0.80\), and \(0.625\). Scaling is sublinear and diminishing returns are clear by 4 to 8 cores.}
+
+\tighttable{\begin{tabular}{@{}p{0.13\columnwidth}p{0.17\columnwidth}p{0.22\columnwidth}@{}}
+Cores & S & E \\
+1 & 1.0 & 100\% \\
+2 & 1.8 & 90\% \\
+4 & 3.2 & 80\% \\
+8 & 5.0 & 62.5\% \\
+\end{tabular}}
+
+\qa{What pseudocode should you write for a speedup/efficiency question?}{Read \code{Tseq}, \code{Tpar}, and \code{cores}; compute \code{speedup = Tseq / Tpar}; compute \code{efficiency = speedup / cores}; print all inputs plus speedup and efficiency.}
+
+\section{Week 2}
+\subhead{Concept}
+\qa{What is a thread, and how is it different from a process?}{A thread is a lightweight execution unit inside a process. Threads share memory and resources, so communication is cheap but synchronization is required. Processes are isolated and use heavier inter-process communication.}
+
+\qa{What are atomic data types or atomic operations, and why do they help?}{Atomic operations appear to happen as one indivisible step. They prevent unsafe interleavings for simple shared updates such as counters or flags, so \code{counter++} can be made safe when performed atomically. For larger multi-step critical sections, use a mutex instead.}
+
+\qa{Semaphore-based producer-consumer vs monitor-based producer-consumer?}{Semaphore solutions use explicit counters such as empty/full slots and usually a mutex around the buffer. Monitor-style solutions wrap the shared buffer and synchronization inside one class with methods like \code{produce()} and \code{consume()}, which improves encapsulation and reduces ordering mistakes.}
+
+\subhead{Analysis}
+\qa{Eight threads update one global counter. What can go wrong?}{Race conditions, lost updates, non-atomic \code{counter++}, and visibility problems. The final result becomes timing-dependent and may change across runs. Fix with \code{std::atomic<int>} for simple increments or a mutex for larger critical sections.}
+
+\tighttable{\begin{tabular}{@{}p{0.29\columnwidth}p{0.56\columnwidth}@{}}
+Problem & Impact \\
+Race condition & Final result depends on timing \\
+Lost update & Some increments disappear \\
+Non-atomic ++ & Read/add/write can interleave \\
+Visibility issue & Threads may see stale data \\
+\end{tabular}}
+
+\qa{Why is thread speedup usually not linear as threads increase?}{Amdahl's serial fraction stays, while lock contention, memory bandwidth limits, load imbalance, and scheduling overhead grow. If time drops only slightly from 8 to 16 threads, the program is near saturation.}
+
+\subhead{Programming}
+\qa{How do you write a safe shared-counter program?}{Create multiple threads, let each increment a shared counter many times, and protect the increment with \code{std::lock_guard<std::mutex>} or use \code{std::atomic<int>}. The unsafe version can print the wrong final count; the safe version should match the expected count.}
+
+\qa{How do you implement producer-consumer using a monitor-like construct?}{Wrap \code{queue}, \code{mutex}, and \code{condition_variable}s inside a \code{BoundedBuffer} class. In \code{produce()}, wait until space exists, push, then notify consumers. In \code{consume()}, wait until data exists, pop, then notify producers.}
+
+\section{Week 3}
+\subhead{Concept}
+\qa{What is divide-and-conquer, and why is it effective for recursive problems?}{Break the problem into smaller subproblems, solve them independently, often in parallel, and combine the results. Recursive problems naturally fit this because subproblems are often independent at each level.}
+
+\qa{What is the master-worker pattern?}{A master creates tasks, distributes them to workers, tracks progress, and collects results. Workers repeatedly receive work, compute, and return outputs. It fits job queues, image processing, data analysis, and other workloads with many similar independent tasks.}
+
+\qa{Why must the chosen parallel pattern match the problem structure?}{A good pattern matches decomposition, dependencies, and data layout. The wrong pattern creates unnecessary communication, poor load balance, excess synchronization, idle processors, and weak scalability.}
+
+\subhead{Analysis}
+\qa{Why is designing a parallel program harder than designing a sequential one?}{Parallel design must preserve correctness while exposing useful concurrency. The main issues are task decomposition, dependencies, synchronization, communication, load balance, memory consistency, scalability, and task granularity.}
+
+\qa{How do you apply PCAM to image processing?}{Partition the image into rows or tiles, communicate halo or boundary pixels when needed, agglomerate tiny pixel tasks into larger tiles to reduce overhead, and map tiles evenly to processors or threads.}
+
+\tighttable{\begin{tabular}{@{}p{0.26\columnwidth}p{0.62\columnwidth}@{}}
+PCAM & Image example \\
+Partition & Rows/tiles/regions \\
+Communicate & Boundary or halo pixels \\
+Agglomerate & Merge tiny tasks into tiles \\
+Map & Spread tiles evenly \\
+\end{tabular}}
+
+\subhead{Programming}
+\qa{How do you implement a three-stage pipeline?}{Use one thread each for read, process, and store, with thread-safe queues between stages. The reader pushes data into queue 1, the processor waits on queue 1, transforms items, and pushes to queue 2, and the writer waits on queue 2 and outputs results.}
+
+\qa{How do you implement a master-worker application?}{Use a shared task queue, one or more worker threads, and synchronization around queue access. The master pushes tasks and signals availability; workers wait for tasks, pop one safely, compute, and store the results.}
+
+\section{Week 4}
+\subhead{Concept}
+\qa{What is MPI and why is it common on distributed-memory systems?}{MPI is a standard message-passing interface for parallel processes. Distributed-memory systems have no shared address space, so data must be exchanged explicitly; MPI provides scalable point-to-point and collective communication for that model.}
+
+\qa{What do \code{MPI_Comm_rank()} and \code{MPI_Comm_size()} do?}{\code{MPI_Comm_rank()} gives the current process ID in the communicator, and \code{MPI_Comm_size()} gives the total number of participating processes. They let processes choose roles, split data, and target communication correctly.}
+
+\qa{What is buffered communication in MPI?}{Buffered send copies the outgoing message into a user-attached buffer, so the sender can continue after the copy completes. It differs from standard blocking \code{MPI_Send}, where MPI may block the sender before the send buffer is safe to reuse.}
+
+\subhead{Analysis}
+\qa{How can one MPI executable behave differently on different processes in SPMD?}{All ranks run the same program image, but each process learns its rank and total size, branches on rank, and works on different local data. The same executable therefore yields root roles, worker roles, and different communication paths.}
+
+\tighttable{\begin{tabular}{@{}p{0.28\columnwidth}p{0.58\columnwidth}@{}}
+Mechanism & Role in SPMD \\
+Rank & Gives each process an identity \\
+Size & Sets total participants \\
+Branch on rank & Root and worker behavior \\
+Data split & Same code, different local work \\
+\end{tabular}}
+
+\subhead{Programming}
+\qa{What should a minimal MPI greeting program do?}{Call \code{MPI_Init}, get \code{rank} and \code{size} with \code{MPI_Comm_rank} and \code{MPI_Comm_size}, print a greeting like \code{"Hello from rank ..."}, then call \code{MPI_Finalize}.}
+
+\qa{How do you modify a blocking \code{MPI_Send} program to use buffered communication?}{Attach a user buffer with \code{MPI_Buffer_attach}, replace \code{MPI_Send} with \code{MPI_Bsend}, then call \code{MPI_Buffer_detach} before exit. The receiver can still use \code{MPI_Recv}.}
+
+\section{Week 5}
+\subhead{Concept}
+\qa{What is collective communication, and how is it different from point-to-point communication?}{Collectives involve a whole communicator in one coordinated operation such as broadcast, scatter, gather, reduce, or all-to-all. Point-to-point communication connects exactly one sender and one receiver and requires manual coordination.}
+
+\qa{What is \code{MPI_Gather()}, and why is it common?}{It collects local chunks from all ranks and stores the combined result on one root rank in rank order. It is common in scatter-compute-gather patterns where each process works independently on a piece of data and the root needs the full output.}
+
+\qa{Why is all-to-all communication more expensive than scatter or gather?}{Scatter is one-to-many, gather is many-to-one, but all-to-all is many-to-many. That means more total traffic, more coordination, and more chance of contention, so \code{MPI_Alltoall} is usually the most communication-intensive choice.}
+
+\subhead{Analysis}
+\qa{A large array on rank 0 must be divided equally among all processes. Which operation should you choose and why?}{Use \code{MPI_Scatter}. It is designed to split one root buffer into equal-sized chunks and distribute one chunk to each rank. It is clearer and usually better optimized than manual send/receive code.}
+
+\subhead{Programming}
+\qa{How do you write an \code{MPI_Scatter()} distribution program?}{Create a full array on rank 0, allocate a small receive buffer on each rank, call \code{MPI_Scatter}, then print the received values locally on each process.}
+
+\qa{How do you compute a global average with MPI?}{Pattern: Scatter -> local sum -> Reduce. Scatter equal chunks, compute \code{localSum}, combine with \code{MPI_Reduce(..., MPI_SUM, 0, ...)}, and on rank 0 compute \code{average = (double)globalSum / N;}.}
+
+\tighttable{\begin{tabular}{@{}p{0.28\columnwidth}p{0.58\columnwidth}@{}}
+Need & MPI call \\
+Same data everywhere & \code{MPI_Bcast} \\
+One chunk per rank & \code{MPI_Scatter} \\
+Collect chunks to root & \code{MPI_Gather} \\
+Combine values & \code{MPI_Reduce} \\
+Everyone exchanges & \code{MPI_Alltoall} \\
+\end{tabular}}
+
+\section{Week 6}
+\subhead{Concept}
+\qa{What is CUDA, and why is it important?}{CUDA is NVIDIA's GPU computing platform and programming model. It lets the CPU launch kernels on the GPU, which can run thousands of lightweight threads on large data-parallel workloads such as simulations, image processing, and machine learning.}
+
+\qa{What is a warp, and why is it significant?}{A warp is a group of 32 CUDA threads scheduled together. Warps are the basic GPU execution unit, help hide latency, and work best when threads follow the same control flow. Divergence forces different branch paths to execute separately and lowers throughput.}
+
+\qa{What is the role of Thrust algorithms? Give examples.}{Thrust gives STL-like high-level GPU algorithms, so common parallel operations need less low-level CUDA code. \code{thrust::transform} applies an operation elementwise, and \code{thrust::reduce} combines many values into one, such as summing a vector or aggregating results.}
+
+\subhead{Analysis}
+\qa{Is a workload with millions of independent elements a good CUDA candidate?}{Usually yes. It has strong data parallelism and high task independence, which fit CUDA well. The main caution is transfer overhead: if host-device copies dominate the runtime, gains may shrink or disappear.}
+
+\tighttable{\begin{tabular}{@{}p{0.28\columnwidth}p{0.58\columnwidth}@{}}
+Factor & CUDA implication \\
+Data parallelism & Strong fit \\
+Task independence & Low synchronization cost \\
+SIMT-friendly flow & Better warp efficiency \\
+High transfer cost & Can erase gains \\
+Enough work & Helps amortize overhead \\
+\end{tabular}}
+
+\subhead{Programming}
+\qa{What does a minimal GPU hello-world program look like?}{Write a \code{__global__} kernel that prints a message, launch it with something like \code{helloKernel<<<1,4>>>();}, and call \code{cudaDeviceSynchronize()} so the host waits for GPU output.}
+
+\qa{How do custom CUDA vector addition and Thrust vector addition compare?}{A custom kernel gives low-level control over indexing, launch, and memory management using lines like \code{int i = blockIdx.x * blockDim.x + threadIdx.x;} and \code{if (i < N) C[i] = A[i] + B[i];}. Thrust is shorter for common operations, for example \code{thrust::transform(A.begin(), B.begin(), C.begin(), thrust::plus<int>());}.}
+
+\tighttable{\begin{tabular}{@{}p{0.24\columnwidth}p{0.24\columnwidth}p{0.36\columnwidth}@{}}
+Approach & Control & Best use \\
+Kernel & High & Custom tuning \\
+Thrust & Lower & Common data-parallel ops \\
+\end{tabular}}
+
+\qa{What is the basic CUDA workflow?}{Allocate device memory with \code{cudaMalloc}, copy host to device with \code{cudaMemcpyHostToDevice}, launch the kernel, copy results back with \code{cudaMemcpyDeviceToHost}, then free memory. A common indexing line is \code{int i = blockIdx.x * blockDim.x + threadIdx.x;}.}
+
+\section{Code Samples}
+
+\textbf{Week 1: Speedup Pseudocode}\par
+\begin{lstlisting}
+INPUT Tseq
+INPUT Tpar
+INPUT cores
+speedup = Tseq / Tpar
+efficiency = speedup / cores
+PRINT speedup, efficiency
+\end{lstlisting}
+
+\textbf{Week 2: Mutex Counter}\par
+\begin{lstlisting}[language=C++]
+void increment(){
+    for(int i=0; i<50000; i++){
+        std::lock_guard<std::mutex> lock(mtx);
+        counter++; // shared variable
+    }
+}
+\end{lstlisting}
+
+\textbf{Week 2: Semaphore Producer}\par
+\begin{lstlisting}[language=C++]
+slotsAvailable.acquire(); // wait for empty slot
+{
+    std::lock_guard<std::mutex> lock(mutobj);
+    buffer[in] = item;
+    in = (in + 1) % BUFFSIZE;
+}
+resAvailable.release();
+\end{lstlisting}
+
+\textbf{Week 3: Pipeline Processor}\par
+\begin{lstlisting}[language=C++]
+std::unique_lock<std::mutex> lock1(mtx1);
+cv1.wait(lock1, []{ return !q1.empty() || doneProducing; });
+int x = q1.front();
+q1.pop();
+lock1.unlock();
+int result = x*x;
+\end{lstlisting}
+
+\textbf{Week 3: Master-Worker}\par
+\begin{lstlisting}[language=C++]
+std::lock_guard<std::mutex> lock(mtx);
+if(tasks.empty())
+    return;
+task = tasks.front();
+tasks.pop();
+std::cout << "Worker " << id << " processing task " << task;
+\end{lstlisting}
+
+\textbf{Week 3: Fork-Join}\par
+\begin{lstlisting}[language=C++]
+std::thread t1([&leftSum, start, mid](){
+    leftSum = parallelSum(start, mid);
+});
+std::thread t2([&rightSum, mid, end](){
+    rightSum = parallelSum(mid, end);
+});
+t1.join();
+t2.join();
+return leftSum + rightSum;
+\end{lstlisting}
+
+\textbf{Week 4: MPI Hello Skeleton}\par
+\begin{lstlisting}[language=C++]
+MPI_Init(&argc, &argv);
+MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+MPI_Comm_size(MPI_COMM_WORLD, &size);
+std::cout << "Hello from rank " << rank << " of " << size;
+MPI_Finalize();
+\end{lstlisting}
+
+\textbf{Week 4: MPI Send/Recv}\par
+\begin{lstlisting}[language=C++]
+if (rank == 0) {
+    int value = 42;
+    MPI_Send(&value, 1, MPI_INT, 1, 0, MPI_COMM_WORLD);
+} else if (rank == 1) {
+    int value = 0;
+    MPI_Status status;
+    MPI_Recv(&value, 1, MPI_INT, 0, 0, MPI_COMM_WORLD, &status);
+}
+\end{lstlisting}
+
+\textbf{Week 4: Buffered Send Steps}\par
+\begin{lstlisting}[language=C++]
+int bufferSize = MPI_BSEND_OVERHEAD + N * sizeof(int);
+char* buffer = new char[bufferSize];
+MPI_Buffer_attach(buffer, bufferSize);
+MPI_Bsend(data, N, MPI_INT, 1, 0, MPI_COMM_WORLD);
+MPI_Buffer_detach(&detached, &detachedSize);
+\end{lstlisting}
+
+\textbf{Week 5: Scatter and Gather}\par
+\begin{lstlisting}[language=C++]
+MPI_Scatter(sendbuf, 2, MPI_INT, recvbuf, 2, MPI_INT, 0, MPI_COMM_WORLD);
+recvbuf[0] += 2;
+recvbuf[1] += 2;
+MPI_Gather(recvbuf, 2, MPI_INT, gatherbuf, 2, MPI_INT, 0, MPI_COMM_WORLD);
+\end{lstlisting}
+
+\textbf{Week 5: Reduce for Average}\par
+\begin{lstlisting}[language=C++]
+int localSum = 0;
+for (int i = 0; i < valuesPerProcess; i++)
+    localSum += recvbuf[i];
+MPI_Reduce(&localSum, &globalSum, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
+\end{lstlisting}
+
+\textbf{Week 6: GPU Hello}\par
+\begin{lstlisting}[language=C++]
+__global__ void helloKernel() {
+    printf("Hello from GPU thread %d\n", threadIdx.x);
+}
+helloKernel<<<1, 4>>>();
+cudaDeviceSynchronize();
+\end{lstlisting}
+
+\textbf{Week 6: CUDA Kernel}\par
+\begin{lstlisting}[language=C++]
+__global__
+void add(int *A, int * B, int* C, int N){
+    int i = blockIdx.x * blockDim.x + threadIdx.x;
+    if(i < N)
+        C[i] = A[i] + B[i];
+}
+add<<<1,256>>>(d_A, d_B,d_C,N);
+\end{lstlisting}
+
+\textbf{Week 6: Thrust}\par
+\begin{lstlisting}[language=C++]
+thrust::device_vector<int> v(5);
+int sum = thrust::reduce(v.begin(),v.end());
+thrust::transform(A.begin(), B.begin(), C.begin(), thrust::plus<int>());
+\end{lstlisting}
+
+\end{multicols}
+
+\end{document}
