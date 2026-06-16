@@ -1,0 +1,124 @@
+CPU - multiple cores - threading, OpenMP, - more powerful than GPU processors
+GPU - [][][][][][][][][][][][][][][] - thousands of processors - smaller
+
+C = A + B;
+A, B, C are arrays of 1000000, or 10000000, 20000000,
+
+CUDA - Compute Unified Device Architecture
+by NVIDIA
+allows use of C/C++ + GPU computing
+
+Programming Model
+
+CPU (host)
+ PCIe bus - Peripheral Component Interconnect - express 
+GPU (device)
+
+1. memory allocation in host
+2. memory allocation in device
+3. copy data to the device
+4. Execute compuations in device
+5. copy data back from device to host
+6. deallocate memory in device.
+7. display the data
+8. deallocate memory in host
+
+
+GRID
+ -  Block0
+	Thread 0
+	Thread 1
+	Thread 2
+	Thread 3
+
+ -  Block1
+	Thread 0
+	Thread 1 <<<      1 * 4 + 1 = 5
+	Thread 2
+	Thread 3
+
+ -  Block 2
+	Thread 0
+	Thread 1
+	Thread 2
+	Thread 3
+
+1 * 4 + 1 
+blockIdx.x * blockDim.x + threadIdx.x
+
+nvcc - NVIDIA CUDA Compiler 
+
+SIMT - Single Instruction, Multiple Threads,
+
+Warps
+======
+- basic execution unit of GPU
+32 threads
+
+add<<<1,50>>>(d_A, d_B,d_C,N);
+32 - Warps
+32 - Warps (14 threads are wasted)
+64
+
+in practice you can:
+choose block size = 128, 265, 512 (divisible by 32)
+17, 43, 87, 
+
+Compilation Flow
+==================
+.cu File
+   |
+   v
+  nvcc
+   |
+   ------> CUP Code -> compilation path -> 
+   |
+   ------> GPU code -> compilation path -> 
+
+
+GPU binary files
+=============
+|
++---  PTX - Parallel Thread Execution -> result in code which looks like
+                    assembly language code. 
+	(ld.global, add.f32, st.global)
+|
++--- Machine code
+
+[][][][][][][][] - byte
+
+ld.global - load data from global memory
+add.f32 - add two 32-bit floating point values
+st.global - store data back to global memory
+
+Warp Divergence
+=================
+
+if(x > 0)
+	doA();
+else 
+	doB();
+
+Advantages of use of Block:
+> Scalability
+> Flexibility - scheduling
+
+GPU Scheduler
+=============
+- decides which block runs first, which runs afterwards. 
+
+Occupancy
+==========
+how many Warps (group of 32 threads) 
+
+Occupancy = (Maximum possible Warps)/(Active warps)
+
+
+CUDA Project Structure
+
+
+Thrust Demonstration
+======================
+
+
+
