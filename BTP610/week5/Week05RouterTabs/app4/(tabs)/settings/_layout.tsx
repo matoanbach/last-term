@@ -1,0 +1,12 @@
+import { Stack } from "expo-router";
+import React from "react";
+
+export default function Layout() {
+    return (
+        <Stack>
+            <Stack.Screen name="screen1"/>
+            <Stack.Screen name="screen2"/>
+            <Stack.Screen name="screen3"/>
+        </Stack>
+)
+}
