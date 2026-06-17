@@ -3,10 +3,10 @@ import appStyle from "@/styles/AppStyle";
 import React from "react";
 
 
-export default function Screen2() {
+export default function Index() {
   return (
       <View style={appStyle.mainView}>
-        <Text style={appStyle.title}>Screen2</Text>
+        <Text style={appStyle.title}>Index2</Text>
       </View>
   );
 }
