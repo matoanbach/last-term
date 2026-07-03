@@ -1,0 +1,227 @@
+\documentclass[11pt]{article}
+
+\usepackage[margin=1in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{longtable}
+\usepackage{tabularx}
+\usepackage{listings}
+\usepackage{xcolor}
+
+\lstdefinestyle{cppstyle}{
+  basicstyle=\ttfamily\small,
+  keywordstyle=\color{blue},
+  commentstyle=\color{teal},
+  stringstyle=\color{magenta},
+  showstringspaces=false,
+  breaklines=true,
+  frame=single
+}
+
+\title{DPS921 Lab Activity 3\\Sequential and CUDA Matrix Multiplication}
+\author{Student Name: \underline{\hspace{2.4in}}\\Student ID: \underline{\hspace{2.7in}}\\Seneca Email: \underline{\hspace{2.35in}}}
+\date{Submission Date: \underline{\hspace{2in}}}
+
+\begin{document}
+
+\maketitle
+
+\section{Overview}
+This report documents the implementation and performance analysis for Lab Activity 3. The lab compares a sequential CPU matrix multiplication program with two CUDA versions: a basic global-memory kernel and an optimized tiled shared-memory kernel. An optional Thrust-based implementation can also be included.
+
+The matrix multiplication problem is defined as:
+\[
+C = A \times B, \quad c_{ij} = \sum_{k=1}^{N} a_{ik} b_{kj}
+\]
+All matrices are stored in row-major order using one-dimensional arrays.
+
+\section{Environment}
+\begin{tabularx}{\textwidth}{@{}lX@{}}
+\toprule
+Item & Details \\
+\midrule
+Operating system & \underline{\hspace{4.5in}} \\
+Compiler for Question 1 & \underline{\hspace{4.2in}} \\
+CUDA toolkit version & \underline{\hspace{4.1in}} \\
+GPU model & \underline{\hspace{4.9in}} \\
+Build commands & \small\texttt{g++ -O2 -std=c++17 question1.cpp -o question1} \\
+& \small\texttt{nvcc -O2 question2.cu -o question2} \\
+\bottomrule
+\end{tabularx}
+
+\section{Question 1: Sequential Matrix Multiplication}
+\subsection{Implementation Summary}
+The CPU version uses the standard three-loop matrix multiplication algorithm. For each output element \(C[i,j]\), the program computes the dot product of row \(i\) from matrix \(A\) and column \(j\) from matrix \(B\). The implementation accepts the matrix size as a command-line argument and reports the average execution time over five runs.
+
+\subsection{Core CPU Algorithm}
+\begin{lstlisting}[style=cppstyle,language=C++]
+for (int i = 0; i < N; i++) {
+    for (int j = 0; j < N; j++) {
+        float sum = 0.0f;
+        for (int k = 0; k < N; k++) {
+            sum += A[i * N + k] * B[k * N + j];
+        }
+        C[i * N + j] = sum;
+    }
+}
+\end{lstlisting}
+
+\subsection{Timing Results}
+Record at least five runs for each matrix size and report the average.
+
+{\small
+\setlength{\tabcolsep}{4pt}
+\begin{longtable}{@{}>{\raggedright\arraybackslash}p{1.05in}*{5}{>{\centering\arraybackslash}p{0.78in}}>{\centering\arraybackslash}p{0.92in}@{}}
+\toprule
+Matrix size & R1 (ms) & R2 (ms) & R3 (ms) & R4 (ms) & R5 (ms) & Avg (ms) \\
+\midrule
+\endfirsthead
+\toprule
+Matrix size & R1 (ms) & R2 (ms) & R3 (ms) & R4 (ms) & R5 (ms) & Avg (ms) \\
+\midrule
+\endhead
+256 $\times$ 256 & & & & & & \\
+512 $\times$ 512 & & & & & & \\
+1024 $\times$ 1024 & & & & & & \\
+\bottomrule
+\end{longtable}
+}
+
+\subsection{Correctness}
+The CPU output was validated using the provided sample verification routine. Report the result here:
+
+\begin{center}
+\fbox{\parbox{0.85\textwidth}{Correctness result for Question 1: \underline{\hspace{2in}}}}
+\end{center}
+
+\section{Question 2: CUDA Matrix Multiplication}
+\subsection{Part A: Basic CUDA Implementation}
+The first CUDA version uses global memory only. Each thread computes exactly one output element of matrix \(C\). A two-dimensional block and grid configuration is used so that thread coordinates map naturally to matrix row and column positions.
+
+\subsection{Basic CUDA Kernel}
+\begin{lstlisting}[style=cppstyle,language=C++]
+__global__ void matrixMultiplyBasicCUDA(float *A, float *B, float *C, int N)
+{
+    int row = blockIdx.y * blockDim.y + threadIdx.y;
+    int col = blockIdx.x * blockDim.x + threadIdx.x;
+
+    if (row < N && col < N) {
+        float sum = 0.0f;
+        for (int k = 0; k < N; k++) {
+            sum += A[row * N + k] * B[k * N + col];
+        }
+        C[row * N + col] = sum;
+    }
+}
+\end{lstlisting}
+
+\subsection{Part B: Tiled Shared-Memory CUDA Implementation}
+The optimized CUDA version uses shared memory tiling. A tile size of 16 $\times$ 16 was selected because it matches the block configuration required by the assignment and provides a practical balance between occupancy and shared-memory reuse on common GPUs.
+
+Shared memory improves performance because threads in the same block can reuse data loaded from global memory. This reduces repeated global-memory reads and lowers overall memory access latency.
+
+\subsection{Tiled CUDA Kernel Summary}
+\begin{itemize}
+\item Two shared tiles are declared: one for a sub-block of \(A\) and one for a sub-block of \(B\).
+\item Each thread cooperatively loads one value from each matrix tile.
+\item Threads synchronize before using the tile values.
+\item Each thread accumulates a partial sum across all required tiles.
+\item The final result is written to the corresponding output element in global memory.
+\end{itemize}
+
+\subsection{Question 2 Results}
+Fill in the average timing results over five runs. Kernel time should include only the CUDA kernel execution measured using CUDA events. Total time should include allocation, host-to-device transfer, kernel launch, synchronization, device-to-host transfer, and cleanup.
+
+{\small
+\setlength{\tabcolsep}{4pt}
+\begin{longtable}{@{}>{\raggedright\arraybackslash}p{1.15in}>{\centering\arraybackslash}p{0.95in}>{\centering\arraybackslash}p{1.15in}>{\centering\arraybackslash}p{1.1in}>{\centering\arraybackslash}p{0.95in}@{}}
+\toprule
+Matrix size & CPU avg & Basic kernel & Basic total & PASS/FAIL \\
+\midrule
+\endfirsthead
+\toprule
+Matrix size & CPU avg & Basic kernel & Basic total & PASS/FAIL \\
+\midrule
+\endhead
+256 $\times$ 256 & & & & \\
+512 $\times$ 512 & & & & \\
+1024 $\times$ 1024 & & & & \\
+\bottomrule
+\end{longtable}
+}
+
+{\small
+\setlength{\tabcolsep}{4pt}
+\begin{longtable}{@{}>{\raggedright\arraybackslash}p{1.15in}>{\centering\arraybackslash}p{0.95in}>{\centering\arraybackslash}p{1.15in}>{\centering\arraybackslash}p{1.1in}>{\centering\arraybackslash}p{0.95in}@{}}
+\toprule
+Matrix size & CPU avg & Tiled kernel & Tiled total & PASS/FAIL \\
+\midrule
+\endfirsthead
+\toprule
+Matrix size & CPU avg & Tiled kernel & Tiled total & PASS/FAIL \\
+\midrule
+\endhead
+256 $\times$ 256 & & & & \\
+512 $\times$ 512 & & & & \\
+1024 $\times$ 1024 & & & & \\
+\bottomrule
+\end{longtable}
+}
+
+\subsection{Performance Discussion}
+Answer the required discussion points below.
+
+\begin{enumerate}
+\item Which GPU implementation performed better, the basic version or the tiled shared-memory version?
+\item How much speedup did each GPU implementation achieve relative to the CPU implementation?
+\item Why does shared memory improve performance for matrix multiplication?
+\item What overheads are included in the total CUDA execution time but not in kernel execution time?
+\end{enumerate}
+
+\noindent Response:\\[0.3in]
+\fbox{\parbox[t][2.0in][t]{\textwidth}{}}
+
+\section{Question 3: Optional Thrust Component}
+This section is optional. If completed, describe how manual device memory management was replaced with \texttt{thrust::host\_vector}, \texttt{thrust::device\_vector}, and \texttt{thrust::raw\_pointer\_cast()}.
+
+\subsection{Thrust Results}
+{\small
+\setlength{\tabcolsep}{4pt}
+\begin{longtable}{@{}>{\raggedright\arraybackslash}p{1.15in}>{\centering\arraybackslash}p{0.95in}>{\centering\arraybackslash}p{1.15in}>{\centering\arraybackslash}p{1.1in}>{\centering\arraybackslash}p{0.95in}@{}}
+\toprule
+Matrix size & CPU avg & Thrust kernel & Thrust total & PASS/FAIL \\
+\midrule
+\endfirsthead
+\toprule
+Matrix size & CPU avg & Thrust kernel & Thrust total & PASS/FAIL \\
+\midrule
+\endhead
+256 $\times$ 256 & & & & \\
+512 $\times$ 512 & & & & \\
+1024 $\times$ 1024 & & & & \\
+2048 $\times$ 2048 & & & & \\
+\bottomrule
+\end{longtable}
+}
+
+\subsection{Optional Discussion Prompts}
+\begin{enumerate}
+\item Which implementation performed best overall?
+\item How much speedup did the best GPU version achieve over the CPU version?
+\item What advantages does Thrust provide compared with manual CUDA memory management?
+\item Under what conditions would you choose Thrust over handwritten CUDA memory management?
+\end{enumerate}
+
+\noindent Response:\\[0.3in]
+\fbox{\parbox[t][2.2in][t]{\textwidth}{}}
+
+\section{Conclusion}
+Summarize the main findings of the lab in a short paragraph. State whether the program outputs were correct, whether the tiled kernel improved performance, and what was learned about the trade-off between kernel speed and total CUDA execution time.
+
+\vspace{0.3in}
+\fbox{\parbox[t][1.8in][t]{\textwidth}{}}
+
+\end{document}
