@@ -48,8 +48,9 @@ Operating system & Windows 11 \\
 Compiler for Question 1 & MSVC (Visual Studio 2022) \\
 CUDA toolkit version & CUDA 13.2 \\
 GPU model & NVIDIA RTX A2000 12GB \\
-Build commands & \small\texttt{g++ -O2 -std=c++17 question1.cpp -o question1} \\
-& \small\texttt{nvcc -O2 question2.cu -o question2} \\
+Build commands / configuration & \small\texttt{cl /O2 /std:c++17 question1.cpp} \\
+& \small\texttt{nvcc -O2 -Xcompiler "/Zc:preprocessor" question2.cu -o question2.exe} \\
+& \small\texttt{nvcc -O2 -Xcompiler "/Zc:preprocessor" question3.cu -o question3.exe} \\
 \bottomrule
 \end{tabularx}
 
@@ -71,7 +72,7 @@ for (int i = 0; i < N; i++) {
 \end{lstlisting}
 
 \subsection{Timing Results}
-Record at least five runs for each matrix size and report the average.
+The following table shows five runs for each matrix size and the average execution time.
 
 {\small
 \setlength{\tabcolsep}{4pt}
@@ -133,7 +134,7 @@ Shared memory improves performance because threads in the same block can reuse d
 \end{itemize}
 
 \subsection{Question 2 Results}
-Fill in the average timing results over five runs. Kernel time should include only the CUDA kernel execution measured using CUDA events. Total time should include allocation, host-to-device transfer, kernel launch, synchronization, device-to-host transfer, and cleanup.
+The following tables show the five-run average timing results. Kernel time includes only the CUDA kernel execution measured using CUDA events. Total time includes allocation, host-to-device transfer, kernel launch, synchronization, device-to-host transfer, and cleanup.
 
 The values below are five-run averages produced by the program. The averaged data used for these tables and plots is included in \texttt{q2\_results.csv}, and the graph images were generated with \texttt{generate\_plots.py}.
 
@@ -222,6 +223,25 @@ Matrix size & CPU avg & Basic kernel & Basic total & PASS/FAIL \\
 \end{longtable}
 }
 
+{\small
+\setlength{\tabcolsep}{4pt}
+\begin{longtable}{@{}>{\raggedright\arraybackslash}p{1.15in}>{\centering\arraybackslash}p{0.95in}>{\centering\arraybackslash}p{1.15in}>{\centering\arraybackslash}p{1.1in}>{\centering\arraybackslash}p{0.95in}@{}}
+\toprule
+Matrix size & CPU avg & Tiled kernel & Tiled total & PASS/FAIL \\
+\midrule
+\endfirsthead
+\toprule
+Matrix size & CPU avg & Tiled kernel & Tiled total & PASS/FAIL \\
+\midrule
+\endhead
+256 $\times$ 256 & 26.8558 & 0.8732 & 1.3338 & PASS \\
+512 $\times$ 512 & 219.2198 & 6.2565 & 7.4655 & PASS \\
+1024 $\times$ 1024 & 2317.0010 & 34.2443 & 37.7730 & PASS \\
+2048 $\times$ 2048 & 29925.8749 & 251.2967 & 263.2949 & PASS \\
+\bottomrule
+\end{longtable}
+}
+
 \subsection{Question 3 Graphs}
 \begin{figure}[htbp]
 \centering
@@ -248,37 +268,12 @@ Matrix size & CPU total & Basic CUDA total & Tiled CUDA total & Thrust basic tot
 256 $\times$ 256 & 26.5410 & 24.0695 & 1.1882 & 24.7991 & 1.3338 \\
 512 $\times$ 512 & 215.9212 & 29.5387 & 6.9233 & 32.3979 & 7.4655 \\
 1024 $\times$ 1024 & 2328.3361 & 66.2724 & 38.3738 & 63.4786 & 37.7730 \\
-2048 $\times$ 2048 & N/A & N/A & N/A & 235.5867 & 263.2949 \\
+2048 $\times$ 2048 & 29925.8749 & N/A & N/A & 235.5867 & 263.2949 \\
 \bottomrule
 \end{longtable}
 }
 
-{\small
-\setlength{\tabcolsep}{4pt}
-\begin{longtable}{@{}>{\raggedright\arraybackslash}p{1.15in}>{\centering\arraybackslash}p{0.95in}>{\centering\arraybackslash}p{1.15in}>{\centering\arraybackslash}p{1.1in}>{\centering\arraybackslash}p{0.95in}@{}}
-\toprule
-Matrix size & CPU avg & Tiled kernel & Tiled total & PASS/FAIL \\
-\midrule
-\endfirsthead
-\toprule
-Matrix size & CPU avg & Tiled kernel & Tiled total & PASS/FAIL \\
-\midrule
-\endhead
-256 $\times$ 256 & 26.8558 & 0.8732 & 1.3338 & PASS \\
-512 $\times$ 512 & 219.2198 & 6.2565 & 7.4655 & PASS \\
-1024 $\times$ 1024 & 2317.0010 & 34.2443 & 37.7730 & PASS \\
-2048 $\times$ 2048 & 29925.8749 & 251.2967 & 263.2949 & PASS \\
-\bottomrule
-\end{longtable}
-}
-
-\subsection{Optional Discussion Prompts}
-\begin{enumerate}
-\item Which implementation performed best overall?
-\item How much speedup did the best GPU version achieve over the CPU version?
-\item What advantages does Thrust provide compared with manual CUDA memory management?
-\item Under what conditions would you choose Thrust over handwritten CUDA memory management?
-\end{enumerate}
+\subsection{Discussion}
 
 \noindent Response:\\
 The Thrust-based implementations produced correct results for all tested matrix sizes. Thrust simplified memory management by replacing manual \texttt{cudaMalloc} and \texttt{cudaMemcpy} calls with \texttt{thrust::host\_vector} and \texttt{thrust::device\_vector}, while still allowing the same CUDA kernels to be launched through \texttt{thrust::raw\_pointer\_cast()}. Based on total execution time, the tiled Thrust version performed better than the basic Thrust version for 256 $\times$ 256, 512 $\times$ 512, and 1024 $\times$ 1024. For 2048 $\times$ 2048, however, the basic Thrust version performed better than the tiled Thrust version. Approximate speedups relative to the CPU using total execution time were 1.08$\times$ versus 20.13$\times$ at 256 $\times$ 256, 6.77$\times$ versus 29.36$\times$ at 512 $\times$ 512, 36.50$\times$ versus 61.34$\times$ at 1024 $\times$ 1024, and 127.03$\times$ versus 113.66$\times$ at 2048 $\times$ 2048 for the basic and tiled Thrust versions respectively. Thrust is a good choice when development speed, code clarity, and safer memory management are more important than fully manual control over every CUDA memory operation.
