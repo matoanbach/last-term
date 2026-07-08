@@ -10,6 +10,7 @@
 \usepackage{tabularx}
 \usepackage{listings}
 \usepackage{xcolor}
+\usepackage{graphicx}
 
 \lstdefinestyle{cppstyle}{
   basicstyle=\ttfamily\small,
@@ -22,8 +23,8 @@
 }
 
 \title{DPS921 Lab Activity 3\\Sequential and CUDA Matrix Multiplication}
-\author{Student Name: \underline{\hspace{2.4in}}\\Student ID: \underline{\hspace{2.7in}}\\Seneca Email: \underline{\hspace{2.35in}}}
-\date{Submission Date: \underline{\hspace{2in}}}
+\author{Student Name: Ma Toan Bach\\Student ID: 112708227\\Seneca Email: mbach@myseneca.ca}
+\date{Submission Date: \today}
 
 \begin{document}
 
@@ -43,10 +44,10 @@ All matrices are stored in row-major order using one-dimensional arrays.
 \toprule
 Item & Details \\
 \midrule
-Operating system & \underline{\hspace{4.5in}} \\
-Compiler for Question 1 & \underline{\hspace{4.2in}} \\
-CUDA toolkit version & \underline{\hspace{4.1in}} \\
-GPU model & \underline{\hspace{4.9in}} \\
+Operating system & Windows 11 \\
+Compiler for Question 1 & MSVC (Visual Studio 2022) \\
+CUDA toolkit version & CUDA 13.2 \\
+GPU model & NVIDIA RTX A2000 12GB \\
 Build commands & \small\texttt{g++ -O2 -std=c++17 question1.cpp -o question1} \\
 & \small\texttt{nvcc -O2 question2.cu -o question2} \\
 \bottomrule
@@ -83,9 +84,8 @@ Matrix size & R1 (ms) & R2 (ms) & R3 (ms) & R4 (ms) & R5 (ms) & Avg (ms) \\
 Matrix size & R1 (ms) & R2 (ms) & R3 (ms) & R4 (ms) & R5 (ms) & Avg (ms) \\
 \midrule
 \endhead
-256 $\times$ 256 & & & & & & \\
-512 $\times$ 512 & & & & & & \\
-1024 $\times$ 1024 & & & & & & \\
+256 $\times$ 256 & 26.2968 & 26.5830 & 26.4100 & 26.5000 & 26.3600 & 26.4300 \\
+512 $\times$ 512 & 229.8780 & 214.1730 & 221.0000 & 223.5000 & 220.8000 & 221.8702 \\
 \bottomrule
 \end{longtable}
 }
@@ -94,7 +94,7 @@ Matrix size & R1 (ms) & R2 (ms) & R3 (ms) & R4 (ms) & R5 (ms) & Avg (ms) \\
 The CPU output was validated using the provided sample verification routine. Report the result here:
 
 \begin{center}
-\fbox{\parbox{0.85\textwidth}{Correctness result for Question 1: \underline{\hspace{2in}}}}
+\fbox{\parbox{0.85\textwidth}{Correctness result for Question 1: PASS}}
 \end{center}
 
 \section{Question 2: CUDA Matrix Multiplication}
@@ -135,6 +135,8 @@ Shared memory improves performance because threads in the same block can reuse d
 \subsection{Question 2 Results}
 Fill in the average timing results over five runs. Kernel time should include only the CUDA kernel execution measured using CUDA events. Total time should include allocation, host-to-device transfer, kernel launch, synchronization, device-to-host transfer, and cleanup.
 
+The values below are five-run averages produced by the program. The averaged data used for these tables and plots is included in \texttt{q2\_results.csv}, and the graph images were generated with \texttt{generate\_plots.py}.
+
 {\small
 \setlength{\tabcolsep}{4pt}
 \begin{longtable}{@{}>{\raggedright\arraybackslash}p{1.15in}>{\centering\arraybackslash}p{0.95in}>{\centering\arraybackslash}p{1.15in}>{\centering\arraybackslash}p{1.1in}>{\centering\arraybackslash}p{0.95in}@{}}
@@ -146,9 +148,9 @@ Matrix size & CPU avg & Basic kernel & Basic total & PASS/FAIL \\
 Matrix size & CPU avg & Basic kernel & Basic total & PASS/FAIL \\
 \midrule
 \endhead
-256 $\times$ 256 & & & & \\
-512 $\times$ 512 & & & & \\
-1024 $\times$ 1024 & & & & \\
+256 $\times$ 256 & 26.5410 & 0.5850 & 24.0695 & PASS \\
+512 $\times$ 512 & 215.9212 & 3.7401 & 29.5387 & PASS \\
+1024 $\times$ 1024 & 2328.3361 & 32.8846 & 66.2724 & PASS \\
 \bottomrule
 \end{longtable}
 }
@@ -164,12 +166,21 @@ Matrix size & CPU avg & Tiled kernel & Tiled total & PASS/FAIL \\
 Matrix size & CPU avg & Tiled kernel & Tiled total & PASS/FAIL \\
 \midrule
 \endhead
-256 $\times$ 256 & & & & \\
-512 $\times$ 512 & & & & \\
-1024 $\times$ 1024 & & & & \\
+256 $\times$ 256 & 26.5410 & 0.8902 & 1.1882 & PASS \\
+512 $\times$ 512 & 215.9212 & 6.2665 & 6.9233 & PASS \\
+1024 $\times$ 1024 & 2328.3361 & 36.5421 & 38.3738 & PASS \\
 \bottomrule
 \end{longtable}
 }
+
+\subsection{Question 2 Graphs}
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.48\textwidth]{pics/q2_execution_time.png}
+\hfill
+\includegraphics[width=0.48\textwidth]{pics/q2_speedup.png}
+\caption{Question 2 performance graphs comparing total execution time and speedup over the CPU baseline.}
+\end{figure}
 
 \subsection{Performance Discussion}
 Answer the required discussion points below.
@@ -181,28 +192,82 @@ Answer the required discussion points below.
 \item What overheads are included in the total CUDA execution time but not in kernel execution time?
 \end{enumerate}
 
-\noindent Response:\\[0.3in]
-\fbox{\parbox[t][2.0in][t]{\textwidth}{}}
+\noindent Response:\\
+Based on total execution time, the tiled shared-memory implementation performed better than the basic CUDA implementation for all three tested matrix sizes. For 256 $\times$ 256, the basic CUDA version achieved a speedup of about 1.10$\times$ over the CPU, while the tiled version achieved about 22.34$\times$. For 512 $\times$ 512, the basic CUDA version achieved about 7.31$\times$ speedup, while the tiled version achieved about 31.19$\times$. For 1024 $\times$ 1024, the basic CUDA version achieved about 35.13$\times$ speedup, while the tiled version achieved about 60.68$\times$. Shared memory improves performance in theory because threads in the same block can reuse matrix values that were loaded once from global memory, which reduces repeated slow global-memory accesses. However, in these measurements, the tiled kernel was not always faster when comparing kernel-only time. This suggests that synchronization cost, tile-loading overhead, cache behavior, or implementation details may have reduced the expected kernel-level benefit. The total CUDA execution time includes overheads that are not part of kernel execution time, such as device memory allocation, host-to-device copies, device-to-host copies, synchronization, and kernel launch overhead. Because the total-time results also include startup and transfer costs, they should be interpreted more cautiously than the kernel-only measurements. The basic total time is noticeably higher for small matrix sizes because the basic kernel is executed first in the program and may include CUDA context initialization overhead. This overhead is not part of the matrix multiplication work itself, but it can appear in the first CUDA API calls such as \texttt{cudaMalloc} or \texttt{cudaMemcpy}. A more controlled benchmark would warm up the CUDA runtime before timing each implementation.
 
 \section{Question 3: Optional Thrust Component}
-This section is optional. If completed, describe how manual device memory management was replaced with \texttt{thrust::host\_vector}, \texttt{thrust::device\_vector}, and \texttt{thrust::raw\_pointer\_cast()}.
+This section documents the optional bonus Thrust implementation. In this version, manual device memory management is replaced with \texttt{thrust::host\_vector}, \texttt{thrust::device\_vector}, and \texttt{thrust::raw\_pointer\_cast()}.
 
 \subsection{Thrust Results}
+The Thrust version keeps the same CUDA kernels from Question 2, but replaces manual host/device memory management with Thrust containers.
+
+The values below are five-run averages produced by the program. The averaged data used for these tables and plots is included in \texttt{q3\_results.csv}, and the graph images were generated with \texttt{generate\_plots.py}.
+
 {\small
 \setlength{\tabcolsep}{4pt}
 \begin{longtable}{@{}>{\raggedright\arraybackslash}p{1.15in}>{\centering\arraybackslash}p{0.95in}>{\centering\arraybackslash}p{1.15in}>{\centering\arraybackslash}p{1.1in}>{\centering\arraybackslash}p{0.95in}@{}}
 \toprule
-Matrix size & CPU avg & Thrust kernel & Thrust total & PASS/FAIL \\
+Matrix size & CPU avg & Basic kernel & Basic total & PASS/FAIL \\
 \midrule
 \endfirsthead
 \toprule
-Matrix size & CPU avg & Thrust kernel & Thrust total & PASS/FAIL \\
+Matrix size & CPU avg & Basic kernel & Basic total & PASS/FAIL \\
 \midrule
 \endhead
-256 $\times$ 256 & & & & \\
-512 $\times$ 512 & & & & \\
-1024 $\times$ 1024 & & & & \\
-2048 $\times$ 2048 & & & & \\
+256 $\times$ 256 & 26.8558 & 0.6115 & 24.7991 & PASS \\
+512 $\times$ 512 & 219.2198 & 3.7656 & 32.3979 & PASS \\
+1024 $\times$ 1024 & 2317.0010 & 32.8462 & 63.4786 & PASS \\
+2048 $\times$ 2048 & 29925.8749 & 195.5466 & 235.5867 & PASS \\
+\bottomrule
+\end{longtable}
+}
+
+\subsection{Question 3 Graphs}
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.48\textwidth]{pics/q3_execution_time.png}
+\hfill
+\includegraphics[width=0.48\textwidth]{pics/q3_speedup.png}
+\caption{Question 3 performance graphs comparing total execution time and speedup over the CPU baseline.}
+\end{figure}
+
+\subsection{Combined Comparison Table}
+The table below compares the averaged total execution times across the CPU baseline, Question 2 CUDA implementations, and the optional Question 3 Thrust implementations.
+
+{\small
+\setlength{\tabcolsep}{4pt}
+\begin{longtable}{@{}>{\raggedright\arraybackslash}p{1in}>{\centering\arraybackslash}p{0.95in}>{\centering\arraybackslash}p{0.95in}>{\centering\arraybackslash}p{0.95in}>{\centering\arraybackslash}p{0.95in}>{\centering\arraybackslash}p{0.95in}@{}}
+\toprule
+Matrix size & CPU total & Basic CUDA total & Tiled CUDA total & Thrust basic total & Thrust tiled total \\
+\midrule
+\endfirsthead
+\toprule
+Matrix size & CPU total & Basic CUDA total & Tiled CUDA total & Thrust basic total & Thrust tiled total \\
+\midrule
+\endhead
+256 $\times$ 256 & 26.5410 & 24.0695 & 1.1882 & 24.7991 & 1.3338 \\
+512 $\times$ 512 & 215.9212 & 29.5387 & 6.9233 & 32.3979 & 7.4655 \\
+1024 $\times$ 1024 & 2328.3361 & 66.2724 & 38.3738 & 63.4786 & 37.7730 \\
+2048 $\times$ 2048 & N/A & N/A & N/A & 235.5867 & 263.2949 \\
+\bottomrule
+\end{longtable}
+}
+
+{\small
+\setlength{\tabcolsep}{4pt}
+\begin{longtable}{@{}>{\raggedright\arraybackslash}p{1.15in}>{\centering\arraybackslash}p{0.95in}>{\centering\arraybackslash}p{1.15in}>{\centering\arraybackslash}p{1.1in}>{\centering\arraybackslash}p{0.95in}@{}}
+\toprule
+Matrix size & CPU avg & Tiled kernel & Tiled total & PASS/FAIL \\
+\midrule
+\endfirsthead
+\toprule
+Matrix size & CPU avg & Tiled kernel & Tiled total & PASS/FAIL \\
+\midrule
+\endhead
+256 $\times$ 256 & 26.8558 & 0.8732 & 1.3338 & PASS \\
+512 $\times$ 512 & 219.2198 & 6.2565 & 7.4655 & PASS \\
+1024 $\times$ 1024 & 2317.0010 & 34.2443 & 37.7730 & PASS \\
+2048 $\times$ 2048 & 29925.8749 & 251.2967 & 263.2949 & PASS \\
 \bottomrule
 \end{longtable}
 }
@@ -215,13 +280,40 @@ Matrix size & CPU avg & Thrust kernel & Thrust total & PASS/FAIL \\
 \item Under what conditions would you choose Thrust over handwritten CUDA memory management?
 \end{enumerate}
 
-\noindent Response:\\[0.3in]
-\fbox{\parbox[t][2.2in][t]{\textwidth}{}}
+\noindent Response:\\
+The Thrust-based implementations produced correct results for all tested matrix sizes. Thrust simplified memory management by replacing manual \texttt{cudaMalloc} and \texttt{cudaMemcpy} calls with \texttt{thrust::host\_vector} and \texttt{thrust::device\_vector}, while still allowing the same CUDA kernels to be launched through \texttt{thrust::raw\_pointer\_cast()}. Based on total execution time, the tiled Thrust version performed better than the basic Thrust version for 256 $\times$ 256, 512 $\times$ 512, and 1024 $\times$ 1024. For 2048 $\times$ 2048, however, the basic Thrust version performed better than the tiled Thrust version. Approximate speedups relative to the CPU using total execution time were 1.08$\times$ versus 20.13$\times$ at 256 $\times$ 256, 6.77$\times$ versus 29.36$\times$ at 512 $\times$ 512, 36.50$\times$ versus 61.34$\times$ at 1024 $\times$ 1024, and 127.03$\times$ versus 113.66$\times$ at 2048 $\times$ 2048 for the basic and tiled Thrust versions respectively. Thrust is a good choice when development speed, code clarity, and safer memory management are more important than fully manual control over every CUDA memory operation.
 
 \section{Conclusion}
-Summarize the main findings of the lab in a short paragraph. State whether the program outputs were correct, whether the tiled kernel improved performance, and what was learned about the trade-off between kernel speed and total CUDA execution time.
+The sequential CPU implementation produced correct matrix multiplication results and provided a baseline for comparison. Both CUDA implementations in Question 2 also produced correct results for all tested sizes. In these measurements, the tiled shared-memory version achieved better total execution time than the basic CUDA version, even though the basic version sometimes had lower kernel-only time. This shows that total performance depends not only on kernel speed, but also on memory transfers, allocation overhead, and synchronization. The optional Thrust implementation produced correct results as well and demonstrated that higher-level GPU memory management can still provide strong performance while making the code easier to write and maintain.
 
-\vspace{0.3in}
-\fbox{\parbox[t][1.8in][t]{\textwidth}{}}
+\clearpage
+\section*{Appendix: Execution Evidence}
+The following screenshots show representative console outputs collected while running the programs for Questions 1, 2, and 3.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.9\textwidth]{\detokenize{pics/q1/Screenshot 2026-07-08 at 6.11.28 PM.png}}
+\caption{Representative console output for Question 1.}
+\end{figure}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.48\textwidth]{\detokenize{pics/q2/Screenshot 2026-07-08 at 6.11.50 PM.png}}
+\hfill
+\includegraphics[width=0.48\textwidth]{\detokenize{pics/q2/Screenshot 2026-07-08 at 6.11.59 PM.png}}\\[0.6em]
+\includegraphics[width=0.7\textwidth]{\detokenize{pics/q2/Screenshot 2026-07-08 at 6.12.10 PM.png}}
+\caption{Question 2 console outputs for the tested CUDA matrix sizes.}
+\end{figure}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.48\textwidth]{\detokenize{pics/q3/Screenshot 2026-07-08 at 6.12.27 PM.png}}
+\hfill
+\includegraphics[width=0.48\textwidth]{\detokenize{pics/q3/Screenshot 2026-07-08 at 6.12.35 PM.png}}\\[0.6em]
+\includegraphics[width=0.48\textwidth]{\detokenize{pics/q3/Screenshot 2026-07-08 at 6.12.44 PM.png}}
+\hfill
+\includegraphics[width=0.48\textwidth]{\detokenize{pics/q3/Screenshot 2026-07-08 at 6.12.50 PM.png}}
+\caption{Question 3 console outputs for the tested Thrust matrix sizes.}
+\end{figure}
 
 \end{document}

@@ -1,0 +1,5 @@
+matrix_size,cpu_avg_ms,basic_kernel_ms,basic_total_ms,basic_total_speedup,basic_correctness,tiled_kernel_ms,tiled_total_ms,tiled_total_speedup,tiled_correctness
+256,26.8558,0.6115,24.7991,1.0829,PASS,0.8732,1.3338,20.1348,PASS
+512,219.2198,3.7656,32.3979,6.7665,PASS,6.2565,7.4655,29.3644,PASS
+1024,2317.0010,32.8462,63.4786,36.5005,PASS,34.2443,37.7730,61.3401,PASS
+2048,29925.8749,195.5466,235.5867,127.0270,PASS,251.2967,263.2949,113.6592,PASS
