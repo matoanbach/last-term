@@ -1,0 +1,407 @@
+\documentclass[10pt]{article}
+
+\usepackage[margin=0.35in]{geometry}
+\usepackage{multicol}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{xcolor}
+
+\renewcommand{\ttdefault}{cmtt}
+\newcommand{\ztrans}{\mathrel{\overset{\mathcal Z}{\longleftrightarrow}}}
+\newcommand{\ftrans}{\mathrel{\overset{\mathcal F}{\longleftrightarrow}}}
+
+\makeatletter
+\renewcommand\section{\@startsection{section}{1}{0pt}{0.8ex}{0.4ex}{\normalfont\normalsize\bfseries}}
+\renewcommand\subsection{\@startsection{subsection}{2}{0pt}{0.5ex}{0.2ex}{\normalfont\bfseries}}
+\def\@listi{\leftmargin\leftmargini \topsep 0pt \parsep 0pt \itemsep 0pt}
+\makeatother
+
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0.1em}
+\setlength{\columnsep}{0.15in}
+\setlength{\abovedisplayskip}{3pt}
+\setlength{\belowdisplayskip}{3pt}
+\setlength{\abovedisplayshortskip}{2pt}
+\setlength{\belowdisplayshortskip}{2pt}
+\pagestyle{empty}
+
+\begin{document}
+
+{\Large \textbf{SEG800 DSP Cheatsheet}}\\
+{\small Test 3: z-Transform, DTFT, Frequency-Domain LTI Analysis, Sampling}
+
+\vspace{0.25em}
+\hrule
+\vspace{0.5em}
+
+\scriptsize
+\begin{multicols}{2}
+
+\section{Test Attack}
+
+\textbf{1. Prove periodic}
+\[
+x[n+N]=x[n], \qquad N\in\mathbb Z^+
+\]
+For
+\[
+x[n]=A\cos(\omega_0 n+\theta)
+\]
+periodic iff
+\[
+\omega_0N=2\pi k
+\qquad \Longleftrightarrow \qquad
+\frac{\omega_0}{2\pi}=\frac{k}{N}
+\]
+If $k/N$ is in lowest terms, the fundamental period is $N$. Same idea for $e^{j\omega_0 n}$.
+
+\textbf{2. Find DTFT / inverse DTFT}
+\[
+X(\omega)=\sum_{n=-\infty}^{\infty}x[n]e^{-j\omega n}
+\]
+\[
+x[n]=\frac{1}{2\pi}\int_{-\pi}^{\pi}X(\omega)e^{j\omega n}\,d\omega
+\]
+Try in this order: standard pair, geometric series, time shift, differentiation trick.
+
+\textbf{3. Given a system, find magnitude and phase}
+\[
+Y(\omega)=X(\omega)H(\omega)
+\]
+Find $H(\omega)$ from $h[n]$ or the difference equation, then compute $|H(\omega)|$ and $\angle H(\omega)$.
+
+\section{Part I: The Z-Transform}
+
+\textbf{Definition:}
+\[
+X(z)=\sum_{n=-\infty}^{\infty}x[n]z^{-n}, \qquad x[n]\ztrans X(z)
+\]
+Complex variable: $z=re^{j\omega}$.
+
+\subsection{ROC Rules}
+ROC = set of $z$ where the sum converges.
+\begin{itemize}
+\item ROC never contains a pole.
+\item Right-sided: outside outermost pole.
+\item Left-sided: inside innermost pole.
+\item Two-sided: between poles.
+\item Stable: ROC includes $|z|=1$.
+\item Causal rational stable: all uncancelled poles inside unit circle.
+\end{itemize}
+
+\subsection{Core Pairs}
+\[
+\begin{aligned}
+\delta[n] &\ztrans 1 \\
+u[n] &\ztrans \frac{1}{1-z^{-1}}, \quad |z|>1 \\
+a^n u[n] &\ztrans \frac{1}{1-az^{-1}}, \quad |z|>|a| \\
+na^n u[n] &\ztrans \frac{az^{-1}}{(1-az^{-1})^2}, \quad |z|>|a| \\
+-a^n u[-n-1] &\ztrans \frac{1}{1-az^{-1}}, \quad |z|<|a| \\
+-na^n u[-n-1] &\ztrans \frac{az^{-1}}{(1-az^{-1})^2}, \quad |z|<|a|
+\end{aligned}
+\]
+\[
+\begin{aligned}
+(\cos \omega_0 n)u[n] &\ztrans \frac{1-z^{-1}\cos\omega_0}{1-2z^{-1}\cos\omega_0+z^{-2}}, \quad |z|>1 \\
+(\sin \omega_0 n)u[n] &\ztrans \frac{z^{-1}\sin\omega_0}{1-2z^{-1}\cos\omega_0+z^{-2}}, \quad |z|>1
+\end{aligned}
+\]
+Damped trig: replace denominator by $1-2az^{-1}\cos\omega_0+a^2z^{-2}$ and ROC by $|z|>|a|$.
+
+\subsection{Key Properties}
+\[
+a_1x_1[n]+a_2x_2[n] \ztrans a_1X_1(z)+a_2X_2(z)
+\]
+\[
+x[n-k] \ztrans z^{-k}X(z), \qquad x[-n] \ztrans X(z^{-1})
+\]
+\[
+a^n x[n] \ztrans X(a^{-1}z)
+\]
+\[
+x_1[n]*x_2[n] \ztrans X_1(z)X_2(z)
+\]
+\[
+x[0]=\lim_{z\to\infty}X(z) \quad \text{(causal)}
+\]
+
+\subsection{Inverse z-Transform}
+Methods: power series and partial fractions.
+\[
+\frac{1}{1-a}=\sum_{n=0}^{\infty}a^n, \qquad |a|<1
+\]
+Power-series idea:
+\[
+X(z)=\sum_{n=-\infty}^{\infty}x[n]z^{-n}
+\]
+Read off the coefficients of $z^{-n}$. Outside-pole ROC $\Rightarrow$ expand in powers of $z^{-1}$.
+\[
+\mathcal Z^{-1}\!\left\{\frac{1}{1-pz^{-1}}\right\}=
+\begin{cases}
+p^n u[n], & |z|>|p|\\[4pt]
+-p^n u[-n-1], & |z|<|p|
+\end{cases}
+\]
+Example:
+\[
+\frac{1}{1-1.5z^{-1}+0.5z^{-2}}=\frac{2}{1-z^{-1}}-\frac{1}{1-0.5z^{-1}}
+\]
+\[
+|z|>1 \Rightarrow x[n]=\left(2-\left(\tfrac12\right)^n\right)u[n]
+\]
+
+\subsection{System Function}
+For a relaxed LTI system,
+\[
+y[n]= -\sum_{k=1}^{N}a_k y[n-k]+\sum_{k=0}^{M}b_k x[n-k]
+\]
+\[
+H(z)=\frac{Y(z)}{X(z)}=\frac{\sum_{k=0}^{M}b_k z^{-k}}{1+\sum_{k=1}^{N}a_k z^{-k}}
+\]
+
+\section{Part II: DTFT}
+
+\subsection{Core Formulas}
+\[
+X(\omega)=\sum_{n=-\infty}^{\infty}x[n]e^{-j\omega n}
+\]
+\[
+x[n]=\frac{1}{2\pi}\int_{-\pi}^{\pi}X(\omega)e^{j\omega n}\,d\omega
+\]
+DTFT is continuous in $\omega$ and periodic with period $2\pi$.
+\[
+X(\omega+2\pi)=\sum x[n]e^{-j(\omega+2\pi)n}=X(\omega)
+\]
+Use $-\pi\le \omega \le \pi$ as the main interval.
+
+\subsection{Helpful CTFT Reminder}
+Continuous-time nonperiodic FT:
+\[
+X(\omega)=\int_{-\infty}^{\infty}x(t)e^{-j\omega t}\,dt,
+\qquad
+x(t)=\frac{1}{2\pi}\int_{-\infty}^{\infty}X(\omega)e^{j\omega t}\,d\omega
+\]
+Pairs: $\delta(t)\ftrans 1$, $e^{-at}u(t)\ftrans 1/(a+j\omega)$, time pulse $\leftrightarrow$ sinc.
+
+\subsection{Must-Know DTFT Pairs}
+\[
+\begin{aligned}
+\delta[n] &\ftrans 1 \\
+1 &\ftrans 2\pi\sum_{k=-\infty}^{\infty}\delta(\omega-2\pi k) \\
+a^n u[n] &\ftrans \frac{1}{1-ae^{-j\omega}}, \quad |a|<1 \\
+na^n u[n] &\ftrans \frac{ae^{-j\omega}}{(1-ae^{-j\omega})^2}, \quad |a|<1
+\end{aligned}
+\]
+Ideal discrete-time lowpass rectangle $\leftrightarrow$ sinc sequence:
+$x[0]=\omega_c/\pi$, $x[n]=\sin(\omega_c n)/(\pi n)$ for $n\ne 0$.
+
+\subsection{Standard Problem Templates}
+Finite rectangular sequence, $x[n]=1$ for $0\le n\le N-1$:
+\[
+X(\omega)=\sum_{n=0}^{N-1}e^{-j\omega n}=e^{-j\omega(N-1)/2}\frac{\sin(N\omega/2)}{\sin(\omega/2)}
+\]
+For $N=4$:
+\[
+X(\omega)=e^{-j3\omega/2}\frac{\sin(2\omega)}{\sin(\omega/2)}
+\]
+\[
+|X(\omega)|=\left|\frac{\sin(2\omega)}{\sin(\omega/2)}\right|
+\]
+phase $=-3\omega/2$ with possible $\pi$ jumps when the real ratio is negative.
+
+\subsection{Properties You Actually Use}
+\[
+x[n-k] \ftrans e^{-j\omega k}X(\omega), \qquad x[-n] \ftrans X(-\omega)
+\]
+\[
+x_1[n]*x_2[n] \ftrans X_1(\omega)X_2(\omega)
+\]
+\[
+e^{j\omega_0 n}x[n] \ftrans X(\omega-\omega_0)
+\]
+\[
+nx[n] \ftrans j\frac{dX(\omega)}{d\omega}
+\]
+Example:
+\[
+n(0.5)^n u[n] \ftrans \frac{0.5e^{-j\omega}}{(1-0.5e^{-j\omega})^2}
+\]
+
+\subsection{Symmetry and Parseval}
+If $x[n]$ is real,
+\[
+X(\omega)=X^*(-\omega)
+\]
+So $X_R(\omega)$ and $|X(\omega)|$ are even; $X_I(\omega)$ and phase are odd. Real even $x[n] \Rightarrow$ real even $X(\omega)$.
+\[
+E_x=\sum_{n=-\infty}^{\infty}|x[n]|^2=\frac{1}{2\pi}\int_{-\pi}^{\pi}|X(\omega)|^2\,d\omega
+\]
+
+\section{Part III: LTI Frequency Analysis and Sampling}
+
+\subsection{Core LTI Frequency Formulas}
+\[
+y[n]=x[n]*h[n]
+\qquad \Longleftrightarrow \qquad
+Y(\omega)=X(\omega)H(\omega)
+\]
+\[
+H(\omega)=\sum_{n=-\infty}^{\infty}h[n]e^{-j\omega n},
+\qquad
+h[k]=\frac{1}{2\pi}\int_{-\pi}^{\pi}H(\omega)e^{j\omega k}\,d\omega
+\]
+$H(\omega)$ is $2\pi$-periodic.
+
+\subsection{Professor Hint 3: Magnitude and Phase}
+If
+\[
+H(\omega)=H_R(\omega)+jH_I(\omega)=|H(\omega)|e^{j\Theta(\omega)}
+\]
+then
+\[
+|H(\omega)|=\sqrt{H_R^2(\omega)+H_I^2(\omega)}
+\]
+\[
+\Theta(\omega)=\angle H(\omega)=\tan^{-1}\!\left(\frac{H_I(\omega)}{H_R(\omega)}\right)
+\]
+If
+\[
+H(\omega)=\frac{N(\omega)}{D(\omega)}
+\]
+then
+\[
+|H(\omega)|=\frac{|N(\omega)|}{|D(\omega)|}, \qquad \angle H(\omega)=\angle N(\omega)-\angle D(\omega)
+\]
+Also,
+\[
+|Y(\omega)|=|X(\omega)|\,|H(\omega)|, \qquad \angle Y(\omega)=\angle X(\omega)+\angle H(\omega)
+\]
+For delay factor $e^{-j\omega k}$:
+\[
+|e^{-j\omega k}|=1, \qquad \angle e^{-j\omega k}=-\omega k
+\]
+
+\subsection{Eigenfunction Shortcut}
+If the input is
+\[
+x[n]=Ae^{j\omega_0 n}
+\]
+then
+\[
+y[n]=AH(\omega_0)e^{j\omega_0 n}
+\]
+For a real sinusoid,
+\[
+y[n]=A|H(\omega_0)|\cos\big(\omega_0 n+\phi+\angle H(\omega_0)\big)
+\]
+
+\subsection{Find $H(\omega)$ from a Difference Equation}
+Let
+\[
+x[n]=e^{j\omega n}, \qquad y[n]=H(\omega)e^{j\omega n}
+\]
+Substitute and divide by $e^{j\omega n}$. Example:
+\[
+y[n]+0.5y[n-1]+0.25y[n-2]=x[n]+2x[n-1]+x[n-2]
+\]
+gives
+\[
+H(\omega)=\frac{1+2e^{-j\omega}+e^{-j2\omega}}{1+0.5e^{-j\omega}+0.25e^{-j2\omega}}
+\]
+
+\subsection{First-Order Lowpass / Smoother}
+For
+\[
+y[n]=ay[n-1]+bx[n], \qquad 0<a<1
+\]
+\[
+H(\omega)=\frac{b}{1-ae^{-j\omega}}
+\]
+with
+\[
+1-ae^{-j\omega}=(1-a\cos\omega)+ja\sin\omega
+\]
+So
+\[
+|H(\omega)|=\frac{|b|}{\sqrt{(1-a\cos\omega)^2+(a\sin\omega)^2}}=\frac{|b|}{\sqrt{1+a^2-2a\cos\omega}}
+\]
+\[
+\angle H(\omega)=\angle b-\tan^{-1}\!\left(\frac{a\sin\omega}{1-a\cos\omega}\right)
+\]
+Maximum gain occurs at $\omega=0$:
+\[
+|H(0)|=\frac{|b|}{1-a}
+\]
+Choose
+\[
+b=1-a
+\]
+to make the maximum magnitude unity. Then
+\[
+H(\omega)=\frac{1-a}{1-ae^{-j\omega}}
+\]
+is a normalized lowpass filter.
+
+\subsection{Complex-Exponential Output Example}
+If
+\[
+h[n]=\left(\tfrac12\right)^n u[n], \qquad H(\omega)=\frac{1}{1-\tfrac12 e^{-j\omega}}
+\]
+For $x[n]=Ae^{j\pi n/2}$,
+\[
+H\!\left(\frac{\pi}{2}\right)=\frac{1}{1+\tfrac{j}{2}}=\frac{2}{\sqrt5}e^{-j26.6^\circ}
+\]
+\[
+y[n]=\frac{2A}{\sqrt5}e^{j(\pi n/2-26.6^\circ)}
+\]
+For $x[n]=Ae^{j\pi n}$,
+\[
+H(\pi)=\frac{2}{3}, \qquad y[n]=\frac{2}{3}Ae^{j\pi n}
+\]
+
+\subsection{Sampling}
+\[
+x[n]=x_a(nT), \qquad F_s=\frac{1}{T}
+\]
+For $x_a(t)=A\cos(2\pi Ft+\theta)$,
+\[
+x[n]=A\cos\left(2\pi\frac{F}{F_s}n+\theta\right)
+\]
+Frequency conversions:
+\[
+\Omega=2\pi F, \qquad f=\frac{F}{F_s}, \qquad \omega=2\pi f=2\pi\frac{F}{F_s}=\Omega T
+\]
+\[
+F=fF_s=\frac{\omega F_s}{2\pi}, \qquad \Omega=\omega F_s
+\]
+Because $e^{j(\omega+2\pi k)n}=e^{j\omega n}$, discrete-time frequency is periodic with period $2\pi$.
+
+\subsection{Aliasing and Nyquist}
+If
+\[
+F_2=F_1+kF_s
+\]
+then both analog frequencies produce the same sampled complex exponential. Fold into
+\[
+-\frac{F_s}{2}\le F \le \frac{F_s}{2}
+\]
+using
+\[
+F_{\text{alias}}=F-kF_s
+\]
+Nyquist frequency:
+\[
+F_{\text{Nyquist}}=\frac{F_s}{2}
+\]
+Sampling theorem for bandlimit $B$:
+\[
+F_s\ge 2B
+\]
+Nyquist rate = $2B$. Reconstruction uses sinc interpolation:
+\[
+x_a(t)=\sum_{n=-\infty}^{\infty}x_a\!\left(\frac{n}{F_s}\right)g\!\left(t-\frac{n}{F_s}\right),
+\qquad
+g(t)=\frac{\sin(2\pi Bt)}{2\pi Bt}
+\]
+
+\end{multicols}
+\end{document}
