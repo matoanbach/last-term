@@ -1,0 +1,206 @@
+\documentclass[10pt,letterpaper]{article}
+
+\usepackage[margin=0.28in]{geometry}
+\usepackage{multicol}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{enumitem}
+\usepackage{titlesec}
+
+\pagestyle{empty}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{1pt}
+\setlength{\columnsep}{0.14in}
+\setlist[itemize]{leftmargin=*, itemsep=0pt, topsep=1pt, parsep=0pt, partopsep=0pt}
+
+\titleformat{\section}{\bfseries\normalsize}{}{0pt}{}
+\titlespacing*{\section}{0pt}{2pt}{1pt}
+
+\begin{document}
+
+\textbf{Student Name:} \rule[0pt]{2.5in}{0.4pt} \hfill \textbf{Student ID:} \rule[0pt]{1.7in}{0.4pt}
+
+\begin{center}
+\textbf{BTP610 Test 3 Reference Sheet}\\
+Week 8 React Native Maps \textbar{} Week 9 Expo Location \textbar{} Week 10 Firebase MCQ
+\end{center}
+
+\begin{multicols}{3}
+
+\section*{Week 8 Setup}
+\begin{itemize}
+  \item Install: \texttt{npm install react-native-maps}
+  \item Import: \texttt{MapView}, \texttt{Marker}, \texttt{Region}
+  \item React: \texttt{useRef}, \texttt{useState}
+  \item Ref syntax: \texttt{useRef<MapView>(null)}
+\end{itemize}
+
+\section*{Week 8 Region}
+\begin{itemize}
+  \item \texttt{Region = \{ latitude, longitude, latitudeDelta, longitudeDelta \}}
+  \item \texttt{latitude}, \texttt{longitude}: center point
+  \item \texttt{latitudeDelta}, \texttt{longitudeDelta}: zoom area
+  \item Smaller delta = more zoom
+\end{itemize}
+
+\section*{Week 8 Map Syntax}
+\begin{itemize}
+  \item \texttt{<MapView initialRegion=... />}
+  \item \texttt{<MapView region=... />}
+  \item \texttt{initialRegion}: starting map only
+  \item \texttt{region}: controlled map from state
+  \item \texttt{ref=\{mapRef\}}
+  \item Optional prop: \texttt{zoomControlEnabled=\{true\}}
+\end{itemize}
+
+\section*{Week 8 Marker Syntax}
+\begin{itemize}
+  \item \texttt{<Marker coordinate=\{\{ latitude, longitude \}\} />}
+  \item Common props: \texttt{title}, \texttt{description}
+  \item Array render pattern: \texttt{markerList.map(...) }
+  \item Coordinate keys must be \texttt{latitude}/\texttt{longitude}
+\end{itemize}
+
+\section*{Week 8 Actions}
+\begin{itemize}
+  \item \texttt{mapRef.current?.animateToRegion(region)}
+  \item Add marker: update state array with spread
+  \item Clear markers: set state to empty array
+  \item Buttons use \texttt{TouchableOpacity} + \texttt{onPress}
+\end{itemize}
+
+\section*{Week 8 Likely Tasks}
+\begin{itemize}
+  \item show map with starting region
+  \item add random marker
+  \item clear all markers
+  \item zoom to selected location
+  \item render markers from state
+\end{itemize}
+
+\section*{Week 9 Setup}
+\begin{itemize}
+  \item Install: \texttt{npx expo install expo-location}
+  \item Also need maps package
+  \item Import namespace: \texttt{* as Location}
+  \item Often paired with \texttt{MapView}, \texttt{Marker}, \texttt{Region}
+\end{itemize}
+
+\section*{Week 9 State Shapes}
+\begin{itemize}
+  \item \texttt{Region | null}
+  \item \texttt{address: string}
+  \item \texttt{currentAddress: string}
+  \item Current coords come from \texttt{location.coords}
+\end{itemize}
+
+\section*{Week 9 Permission Flow}
+\begin{itemize}
+  \item \texttt{Location.requestForegroundPermissionsAsync()}
+  \item Read \texttt{status}
+  \item If \texttt{status !== "granted"}: stop and alert
+  \item Permission required before current location
+\end{itemize}
+
+\section*{Week 9 GPS Syntax}
+\begin{itemize}
+  \item \texttt{Location.getCurrentPositionAsync(...) }
+  \item Accuracy option: \texttt{Location.Accuracy.Highest}
+  \item Build \texttt{Region} from \texttt{location.coords.latitude} and \texttt{location.coords.longitude}
+  \item Set region state after reading coords
+\end{itemize}
+
+\section*{Week 9 Geocoding}
+\begin{itemize}
+  \item \texttt{Location.geocodeAsync(address)}
+  \item Meaning: address \textrightarrow{} coordinates
+  \item Read: \texttt{result[0].latitude}, \texttt{result[0].longitude}
+  \item Check \texttt{result.length} before using values
+\end{itemize}
+
+\section*{Week 9 Reverse Geocoding}
+\begin{itemize}
+  \item \texttt{Location.reverseGeocodeAsync(\{ latitude, longitude \})}
+  \item Meaning: coordinates \textrightarrow{} readable address
+  \item Common field: \texttt{formattedAddress}
+  \item Useful after getting current location
+\end{itemize}
+
+\section*{Week 9 Map Syntax}
+\begin{itemize}
+  \item Conditional render: map only when \texttt{region} exists
+  \item Marker coordinate often uses \texttt{region.latitude} and \texttt{region.longitude}
+  \item Marker \texttt{description} can show current address
+  \item Input uses \texttt{TextInput}, \texttt{value}, \texttt{onChangeText}
+\end{itemize}
+
+\section*{Week 9 Likely Tasks}
+\begin{itemize}
+  \item ask for location permission
+  \item get current location
+  \item show current location on map
+  \item search typed address
+  \item show readable address after reverse geocode
+\end{itemize}
+
+\section*{Week 9 Common Errors}
+\begin{itemize}
+  \item forgetting permission request
+  \item mixing geocode and reverse geocode
+  \item not checking \texttt{result.length}
+  \item rendering map before \texttt{region} exists
+  \item forgetting deltas in a \texttt{Region}
+\end{itemize}
+
+\section*{Week 10 Core Terms}
+\begin{itemize}
+  \item Install: \texttt{npm install firebase}
+  \item \texttt{initializeApp}: start Firebase app
+  \item \texttt{getAuth}: authentication service
+  \item \texttt{getFirestore}: Firestore database service
+\end{itemize}
+
+\section*{Week 10 Imports}
+\begin{itemize}
+  \item \texttt{from "firebase/app"}: \texttt{initializeApp}
+  \item \texttt{from "firebase/auth"}: \texttt{getAuth}, \texttt{onAuthStateChanged}
+  \item \texttt{from "firebase/firestore"}: \texttt{getFirestore}
+\end{itemize}
+
+\section*{Week 10 Auth Terms}
+\begin{itemize}
+  \item \texttt{createUserWithEmailAndPassword}
+  \item \texttt{signInWithEmailAndPassword}
+  \item \texttt{signOut}
+  \item \texttt{User | null}
+  \item \texttt{onAuthStateChanged}
+\end{itemize}
+
+\section*{Week 10 Route Guard}
+\begin{itemize}
+  \item If no user: redirect to sign in
+  \item If user exists: redirect to app screen
+  \item Expo Router term used in sample: \texttt{Redirect}
+\end{itemize}
+
+\section*{Week 10 Firestore Terms}
+\begin{itemize}
+  \item Firestore = cloud NoSQL database
+  \item Collection name example: \texttt{"books"}
+  \item Common CRUD terms: \texttt{addDoc}, \texttt{getDocs}, \texttt{updateDoc}, \texttt{deleteDoc}
+  \item For your test, Firebase is MCQ only
+\end{itemize}
+
+\section*{High-Yield MCQ Facts}
+\begin{itemize}
+  \item \texttt{MapView} = map component
+  \item \texttt{Marker} = pin component
+  \item \texttt{Region} needs 4 values
+  \item \texttt{geocodeAsync}: address \textrightarrow{} coords
+  \item \texttt{reverseGeocodeAsync}: coords \textrightarrow{} address
+  \item \texttt{onAuthStateChanged}: listens for auth changes
+\end{itemize}
+
+\end{multicols}
+\end{document}
