@@ -30,16 +30,25 @@ def rows_for(rows, optimization, implementation):
     )
 
 
+def optimization_label(optimization):
+    if optimization == "O0":
+        return "no-opt (O0)"
+    if optimization == "O3":
+        return "max-opt (O3)"
+    return optimization
+
+
 def plot_time_chart(rows, optimization):
     plt.figure(figsize=(8, 5))
 
     serial = rows_for(rows, optimization, "serial")[0]
+    label = optimization_label(optimization)
     thread_counts = [1, 2, 4, 8]
     plt.axhline(
         serial["time_ms"],
         color="black",
         linestyle="--",
-        label=f"serial {optimization} ({serial['time_ms']:.0f} ms)",
+        label=f"serial {label} ({serial['time_ms']:.0f} ms)",
     )
 
     for implementation, color in (
@@ -59,7 +68,7 @@ def plot_time_chart(rows, optimization):
     plt.xticks(thread_counts)
     plt.xlabel("Threads")
     plt.ylabel("Execution Time (ms)")
-    plt.title(f"Lab 4 Execution Time ({optimization})")
+    plt.title(f"Lab 4 Execution Time ({label})")
     plt.legend()
     plt.grid(True, linestyle=":", linewidth=0.5)
     plt.tight_layout()
@@ -71,6 +80,7 @@ def plot_speedup_chart(rows, optimization):
     plt.figure(figsize=(8, 5))
 
     serial = rows_for(rows, optimization, "serial")[0]
+    label = optimization_label(optimization)
     for implementation, color in (
         ("naive", "#1f77b4"),
         ("padded", "#2ca02c"),
@@ -89,7 +99,7 @@ def plot_speedup_chart(rows, optimization):
     plt.xticks([1, 2, 4, 8])
     plt.xlabel("Threads")
     plt.ylabel("Speedup vs Serial")
-    plt.title(f"Lab 4 Speedup ({optimization})")
+    plt.title(f"Lab 4 Speedup ({label})")
     plt.legend()
     plt.grid(True, linestyle=":", linewidth=0.5)
     plt.tight_layout()
@@ -100,6 +110,7 @@ def plot_speedup_chart(rows, optimization):
 def plot_efficiency_chart(rows, optimization):
     plt.figure(figsize=(8, 5))
 
+    label = optimization_label(optimization)
     for implementation, color in (
         ("naive", "#1f77b4"),
         ("padded", "#2ca02c"),
@@ -119,7 +130,7 @@ def plot_efficiency_chart(rows, optimization):
     plt.xticks([1, 2, 4, 8])
     plt.xlabel("Threads")
     plt.ylabel("Efficiency")
-    plt.title(f"Lab 4 Efficiency ({optimization})")
+    plt.title(f"Lab 4 Efficiency ({label})")
     plt.legend()
     plt.grid(True, linestyle=":", linewidth=0.5)
     plt.tight_layout()

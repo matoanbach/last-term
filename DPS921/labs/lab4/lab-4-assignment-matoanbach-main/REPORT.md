@@ -36,6 +36,8 @@ The goal of this lab is to parallelize the numerical integration program for app
 
 ### Build And Run
 
+In this report, `-O0` is the required `no-opt` build and `-O3` is the required `max-opt` build.
+
 ```bash
 mkdir -p build
 
@@ -116,7 +118,7 @@ $$
 
 Variables:
 
-- `T_s`: serial baseline time for the same optimization level
+- `T_s`: serial baseline time for the same optimization level (`no-opt` / `-O0` or `max-opt` / `-O3`)
 - `T_p`: OpenMP execution time with `p` threads
 - `p`: number of OpenMP threads
 
@@ -128,10 +130,10 @@ Summary data is stored in `timing_data.csv`.
 
 | Optimization | Threads | Time (ms) | pi(calculated) |
 |---:|---:|---:|---:|
-| O0 | 1 | 3577 | 3.141592653589971 |
-| O3 | 1 | 977 | 3.141592653589971 |
+| no-opt (O0) | 1 | 3577 | 3.141592653589971 |
+| max-opt (O3) | 1 | 977 | 3.141592653589971 |
 
-#### OpenMP Results: O0
+#### OpenMP Results: no-opt (O0)
 
 | Implementation | Threads | Time (ms) | Speedup | Efficiency |
 |---|---:|---:|---:|---:|
@@ -148,7 +150,7 @@ Summary data is stored in `timing_data.csv`.
 | Synchronized | 4 | 39812 | 0.0898 | 0.0225 |
 | Synchronized | 8 | 75812 | 0.0472 | 0.0059 |
 
-#### Visualizations: O0
+#### Visualizations: no-opt (O0)
 
 ![](figures/q1_o0_time_vs_threads.png){ width=95% }
 
@@ -156,7 +158,7 @@ Summary data is stored in `timing_data.csv`.
 
 ![](figures/q1_o0_efficiency_vs_threads.png){ width=95% }
 
-#### OpenMP Results: O3
+#### OpenMP Results: max-opt (O3)
 
 | Implementation | Threads | Time (ms) | Speedup | Efficiency |
 |---|---:|---:|---:|---:|
@@ -173,7 +175,7 @@ Summary data is stored in `timing_data.csv`.
 | Synchronized | 4 | 32628 | 0.0299 | 0.0075 |
 | Synchronized | 8 | 36564 | 0.0267 | 0.0033 |
 
-#### Visualizations: O3
+#### Visualizations: max-opt (O3)
 
 ![](figures/q1_o3_time_vs_threads.png){ width=95% }
 
@@ -187,30 +189,30 @@ All implementations produced values very close to the exact value of $\pi$. The 
 
 ### Performance Observation
 
-- The serial `O3` baseline (`977 ms`) was about `3.66x` faster than the serial `O0` baseline (`3577 ms`).
-- The best `O0` result was the padded version with `8` threads at `948 ms`.
-- The best `O3` result was the naive version with `8` threads at `206 ms`.
+- The serial `max-opt (O3)` baseline (`977 ms`) was about `3.66x` faster than the serial `no-opt (O0)` baseline (`3577 ms`).
+- The best `no-opt (O0)` result was the padded version with `8` threads at `948 ms`.
+- The best `max-opt (O3)` result was the naive version with `8` threads at `206 ms`.
 - The synchronized version was the worst performer for both optimization levels because the shared atomic accumulator became a severe bottleneck.
 
 Observed false-sharing benefit:
 
-- For `O0`, padded outperformed naive at `2`, `4`, and `8` threads (`1855 ms` vs `2099 ms`, `1120 ms` vs `1334 ms`, and `948 ms` vs `1221 ms`).
-- For `O3`, padded slightly outperformed naive at `2` and `4` threads, but naive was slightly faster at `8` threads (`206 ms` vs `211 ms`).
+- For `no-opt (O0)`, padded outperformed naive at `2`, `4`, and `8` threads (`1855 ms` vs `2099 ms`, `1120 ms` vs `1334 ms`, and `948 ms` vs `1221 ms`).
+- For `max-opt (O3)`, padded slightly outperformed naive at `2` and `4` threads, but naive was slightly faster at `8` threads (`206 ms` vs `211 ms`).
 
 Observed synchronization degradation:
 
-- In `O0`, synchronized became slower as threads increased from `1` to `8` (`6250 ms` to `75812 ms`).
-- In `O3`, synchronized remained far slower than the other implementations and also degraded badly at `4` and `8` threads.
+- In `no-opt (O0)`, synchronized became slower as threads increased from `1` to `8` (`6250 ms` to `75812 ms`).
+- In `max-opt (O3)`, synchronized remained far slower than the other implementations and also degraded badly at `4` and `8` threads.
 
 ### Discussion
 
 #### Effect of Compiler Optimization
 
-Compiler optimization had a major impact on performance. Even before parallelization, the serial `O3` binary was much faster than the serial `O0` binary. The same trend appeared in the OpenMP implementations, where the optimized binaries consistently outperformed the corresponding `O0` versions.
+Compiler optimization had a major impact on performance. Even before parallelization, the serial `max-opt (O3)` binary was much faster than the serial `no-opt (O0)` binary. The same trend appeared in the OpenMP implementations, where the `max-opt` binaries consistently outperformed the corresponding `no-opt` versions.
 
 #### Effect of False Sharing
 
-The padded implementation was designed to reduce false sharing by separating per-thread accumulators in memory. The `O0` data shows a clear benefit from padding at higher thread counts. This indicates that cache-line interference affected the naive shared-array layout. Under `O3`, the difference between naive and padded became smaller, which suggests that compiler optimization and hardware behavior reduced the visible penalty.
+The padded implementation was designed to reduce false sharing by separating per-thread accumulators in memory. The `no-opt (O0)` data shows a clear benefit from padding at higher thread counts. This indicates that cache-line interference affected the naive shared-array layout. Under `max-opt (O3)`, the difference between naive and padded became smaller, which suggests that compiler optimization and hardware behavior reduced the visible penalty.
 
 #### Effect of Synchronization
 
@@ -222,10 +224,10 @@ The naive and padded implementations both improved as thread count increased, bu
 
 ### Optimal Configuration
 
-- Best overall wall time: naive `O3` with `8` threads at `206 ms`
-- Best `O0` wall time: padded `O0` with `8` threads at `948 ms`
-- Best evidence of reduced false sharing: padded `O0` compared with naive `O0` at `4` and `8` threads
-- Worst configuration: synchronized `O0` with `8` threads at `75812 ms`
+- Best overall wall time: naive `max-opt (O3)` with `8` threads at `206 ms`
+- Best `no-opt (O0)` wall time: padded `no-opt (O0)` with `8` threads at `948 ms`
+- Best evidence of reduced false sharing: padded `no-opt (O0)` compared with naive `no-opt (O0)` at `4` and `8` threads
+- Worst configuration: synchronized `no-opt (O0)` with `8` threads at `75812 ms`
 
 The balance point on this machine was to use all `8` available threads with a per-thread partial-sum design rather than a synchronized shared accumulator.
 
