@@ -1,0 +1,463 @@
+\documentclass[10pt]{article}
+
+\usepackage[margin=0.35in]{geometry}
+\usepackage{multicol}
+\usepackage{amsmath,amssymb,amsfonts}
+
+\makeatletter
+\renewcommand\section{\@startsection{section}{1}{0pt}{0.8ex}{0.4ex}{\normalfont\normalsize\bfseries}}
+\renewcommand\subsection{\@startsection{subsection}{2}{0pt}{0.5ex}{0.2ex}{\normalfont\bfseries}}
+\def\@listi{\leftmargin\leftmargini \topsep 0pt \parsep 0pt \itemsep 0pt}
+\makeatother
+
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0.1em}
+\setlength{\columnsep}{0.15in}
+\setlength{\abovedisplayskip}{3pt}
+\setlength{\belowdisplayskip}{3pt}
+\setlength{\abovedisplayshortskip}{2pt}
+\setlength{\belowdisplayshortskip}{2pt}
+\pagestyle{empty}
+
+\begin{document}
+
+{\Large \textbf{SEG800 DIP Cheatsheet}}\\
+{\small Test 4: Spatial Filtering, Frequency-Domain Filtering, Color Fundamentals}
+
+\vspace{0.25em}
+\hrule
+\vspace{0.5em}
+
+\scriptsize
+\begin{multicols}{2}
+
+\section{Part I: Spatial Filtering}
+
+\textbf{Noise model:}
+\[
+\hat I(i,j)=I(i,j)+n(i,j)
+\]
+Gaussian noise: small random variations. Salt-and-pepper: extreme dark/bright spikes.
+
+\subsection{Linear Filtering}
+\[
+g(x,y)=\sum_{s=-a}^{a}\sum_{t=-b}^{b}w(s,t)f(x+s,y+t)
+\]
+Kernel normalization for smoothing:
+\[
+\sum_s\sum_t w(s,t)=1
+\]
+
+\subsection{Correlation vs Convolution}
+\[
+\text{corr: } (w\circledast f)(x,y)=\sum_s\sum_t w(s,t)f(x+s,y+t)
+\]
+\[
+\text{conv: } (w\star f)(x,y)=\sum_s\sum_t w(s,t)f(x-s,y-t)
+\]
+Convolution flips the kernel; correlation does not. Symmetric kernels give the same output. Same-size odd $m\times n$ filtering: zero-pad $\lfloor m/2\rfloor,\lfloor n/2\rfloor$ each side; for $3\times 3$, pad 1.
+
+\subsection{Core Kernels}
+Box:
+\[
+\frac{1}{9}
+\begin{bmatrix}
+1&1&1\\
+1&1&1\\
+1&1&1
+\end{bmatrix}
+\qquad
+\frac{1}{25}
+\begin{bmatrix}
+1&1&1&1&1\\
+1&1&1&1&1\\
+1&1&1&1&1\\
+1&1&1&1&1\\
+1&1&1&1&1
+\end{bmatrix}
+\]
+Bilinear:
+\[
+\frac{1}{16}
+\begin{bmatrix}
+1&2&1\\
+2&4&2\\
+1&2&1
+\end{bmatrix}
+\]
+Gaussian:
+\[
+G(x,y)=\exp\!\left(-\frac{x^2+y^2}{2\sigma^2}\right)
+\]
+Worksheet Q4 template with $\sigma=2$ and $3\times 3$ ($x,y\in\{-1,0,1\}$):
+First compute the \textbf{unnormalized} entries:
+\[
+G(-1,-1)=e^{-2/8}=0.7788,\quad G(-1,0)=e^{-1/8}=0.8825,\quad G(0,0)=1
+\]
+Use symmetry for the rest, so
+\[
+G\approx
+\begin{bmatrix}
+0.7788&0.8825&0.7788\\
+0.8825&1.0000&0.8825\\
+0.7788&0.8825&0.7788
+\end{bmatrix},
+\qquad
+\sum G\approx 7.6452
+\]
+Then \textbf{normalize} by dividing every entry by the sum:
+\[
+h(x,y)=\frac{G(x,y)}{\sum_{x,y}G(x,y)}
+\]
+\[
+h=\frac{1}{7.6452}
+\begin{bmatrix}
+0.7788&0.8825&0.7788\\
+0.8825&1.0000&0.8825\\
+0.7788&0.8825&0.7788
+\end{bmatrix}
+\approx
+\begin{bmatrix}
+0.1019&0.1154&0.1019\\
+0.1154&0.1308&0.1154\\
+0.1019&0.1154&0.1019
+\end{bmatrix}
+\]
+
+\subsection{Median Filter}
+For a $3\times 3$ median filter: collect 9 values, sort, choose the 5th. Best for salt-and-pepper noise; usually preserves edges better than averaging.
+
+\subsection{Separable Kernels}
+If
+\[
+w(x,y)=w_1(x)w_2(y)
+\]
+then filter in two 1-D passes. Proof idea: $(w_1w_2)*f=w_1*(w_2*f)=w_2*(w_1*f)$.
+Cost comparison for image $M\times N$, kernel $m\times n$:
+\[
+\text{direct}=MNmn, \qquad \text{separable}=MN(m+n)
+\]
+Speed-up:
+\[
+\frac{MNmn}{MN(m+n)}=\frac{mn}{m+n}
+\]
+Square $m\times m$ case:
+\[
+O(MNm^2) \to O(MNm)
+\]
+For $5\times 5$: $25\to 10$ ops/pixel, speed-up $=2.5\times$.
+Worksheet factorization example:
+\[
+w=
+\begin{bmatrix}
+1&3&1\\
+2&6&2
+\end{bmatrix}
+\]
+Pick $(2,1)$, so $E=2$,
+\[
+\mathbf c=
+\begin{bmatrix}
+1\\2
+\end{bmatrix}
+\!,\ \mathbf r=
+\begin{bmatrix}
+2&6&2
+\end{bmatrix}
+\!,\ w_1=\mathbf c,
+\ w_2=\frac{\mathbf r}{E}=
+\begin{bmatrix}
+1&3&1
+\end{bmatrix}
+\]
+Check:
+\[
+w_1w_2=
+\begin{bmatrix}
+1\\2
+\end{bmatrix}
+\begin{bmatrix}
+1&3&1
+\end{bmatrix}=
+\begin{bmatrix}
+1&3&1\\2&6&2
+\end{bmatrix}
+\]
+
+\subsection{Gaussian Pixel Template}
+For a target pixel, use its local neighborhood and compute
+\[
+g(i,j)=\sum_x\sum_y h(x,y)f(i+x,j+y)
+\]
+Worksheet image at $(2,3)$ uses neighborhood
+\[
+\begin{bmatrix}
+100&102&98\\
+101&99&103\\
+97&100&102
+\end{bmatrix}
+\]
+so
+\[
+\begin{aligned}
+g(2,3)\approx{}&100(0.1019)+102(0.1154)+98(0.1019)\\
+&+101(0.1154)+99(0.1308)+103(0.1154)\\
+&+97(0.1019)+100(0.1154)+102(0.1019)
+\end{aligned}
+\]
+\[
+g(2,3)\approx 100.26\approx 100
+\]
+For high-boost, first compute $\bar f(i,j)$ this way, then use $g_{\text{mask}}=f-\bar f$.
+
+\subsection{Sharpening}
+Laplacian:
+\[
+\nabla^2 f=f(x+1,y)+f(x-1,y)+f(x,y+1)+f(x,y-1)-4f(x,y)
+\]
+Common kernel:
+\[
+\begin{bmatrix}
+0&-1&0\\
+-1&4&-1\\
+0&-1&0
+\end{bmatrix}
+\]
+Sharpening:
+\[
+g=f+c\nabla^2 f
+\]
+Choose sign of $c$ to match the kernel convention.
+
+Unsharp mask and high-boost:
+\[
+g_{\text{mask}}=f-\bar f
+\]
+\[
+g=f+k g_{\text{mask}}=(1+k)f-k\bar f
+\]
+$k=1$: unsharp masking. $k>1$: high-boost.
+
+\section{Part II: Frequency-Domain Filtering}
+
+\subsection{2-D DFT / IDFT}
+\[
+F(u,v)=\sum_{x=0}^{M-1}\sum_{y=0}^{N-1}f(x,y)e^{-j2\pi(ux/M+vy/N)}
+\]
+\[
+f(x,y)=\frac{1}{MN}\sum_{u=0}^{M-1}\sum_{v=0}^{N-1}F(u,v)e^{j2\pi(ux/M+vy/N)}
+\]
+Magnitude, phase, power:
+\[
+F=R+jI=|F|e^{j\phi}
+\]
+\[
+|F|=\sqrt{R^2+I^2}, \qquad \phi=\operatorname{atan2}(I,R), \qquad P=|F|^2
+\]
+DC component:
+\[
+F(0,0)=MN\bar f
+\]
+
+\subsection{Sampling and Aliasing}
+1-D Nyquist:
+\[
+f_s>2f_{\max}
+\]
+2-D Nyquist:
+\[
+\frac{1}{\Delta T}>2\mu_{\max}, \qquad \frac{1}{\Delta Z}>2\nu_{\max}
+\]
+Undersampling causes aliasing and moire patterns.
+
+\subsection{Translation and Centering}
+Spatial shift changes phase, not magnitude:
+\[
+f(x-x_0,y-y_0) \Longleftrightarrow F(u,v)e^{-j2\pi(ux_0/M+vy_0/N)}
+\]
+Center spectrum before filtering:
+\[
+f(x,y)(-1)^{x+y} \Longleftrightarrow F\left(u-\frac{M}{2},v-\frac{N}{2}\right)
+\]
+
+\subsection{Convolution Theorem and Padding}
+\[
+f*h \Longleftrightarrow FH
+\]
+DFT multiplication gives circular convolution unless padded enough.
+For $A\times B$ convolved with $C\times D$:
+\[
+P\ge A+C-1, \qquad Q\ge B+D-1
+\]
+Equal-size shortcut:
+\[
+P\ge 2M-1, \qquad Q\ge 2N-1
+\]
+Common convenient choice:
+\[
+P=2M, \qquad Q=2N
+\]
+Butterworth/other radial filters are built on the padded grid $P\times Q$, centered at $(P/2,Q/2)$. In this course, if not stated otherwise, usually use $P=2M$, $Q=2N$ before computing $D(u,v)$.
+
+\subsection{Frequency-Domain Filtering Workflow}
+\begin{enumerate}
+\item Pad image to $P\times Q$.
+\item Multiply by $(-1)^{x+y}$.
+\item Compute DFT $F(u,v)$.
+\item Build centered filter $H(u,v)$.
+\item Multiply: $G(u,v)=H(u,v)F(u,v)$.
+\item IDFT, multiply by $(-1)^{x+y}$, take real part, crop.
+\end{enumerate}
+
+\subsection{Radial Distance and Filter Families}
+\[
+D(u,v)=\sqrt{\left(u-\frac{P}{2}\right)^2+\left(v-\frac{Q}{2}\right)^2}
+\]
+Ideal LPF:
+\[
+H_{ILPF}=
+\begin{cases}
+1,&D\le D_0\\
+0,&D>D_0
+\end{cases}
+\]
+Gaussian LPF:
+\[
+H_{GLPF}=e^{-D^2/(2D_0^2)}
+\]
+Butterworth LPF:
+\[
+H_{BLPF}=\frac{1}{1+(D/D_0)^{2n}}
+\]
+Worksheet template: find padded center $\to$ compute $D(u,v)$ $\to$ substitute into $H_{BLPF}$.
+High-pass from low-pass:
+\[
+H_{HP}=1-H_{LP}
+\]
+Gaussian HPF:
+\[
+H_{GHPF}=1-e^{-D^2/(2D_0^2)}
+\]
+Butterworth HPF:
+\[
+H_{BHPF}=\frac{1}{1+(D_0/D)^{2n}}, \qquad H_{BHPF}(0,0)=0
+\]
+
+\subsection{Behavior and Computation}
+Small $D_0$ in LPF $\Rightarrow$ stronger smoothing. Larger $D_0$ in HPF $\Rightarrow$ stronger removal of low frequencies.
+
+Ideal filters have strongest ringing. Gaussian has least ringing. Butterworth is a tunable compromise via order $n$.
+
+Ops estimate:
+\[
+\text{spatial}=MNmn, \qquad \text{FFT}\approx 2MN\log_2(MN)
+\]
+Use FFT when kernels are large and nonseparable.
+
+\section{Part III: Color Fundamentals}
+
+\subsection{Terms and Primaries}
+Radiance = physical energy, luminance = perceived light, brightness = subjective, intensity = numeric proxy.
+
+Additive light primaries: RGB.
+\[
+R+G=Y, \qquad G+B=C, \qquad R+B=M, \qquad R+G+B=W
+\]
+Subtractive primaries: CMY. Printing uses CMYK.
+
+\subsection{Chromaticity and Gamut}
+\[
+x=\frac{X}{X+Y+Z}, \qquad y=\frac{Y}{X+Y+Z}, \qquad z=\frac{Z}{X+Y+Z}, \qquad x+y+z=1
+\]
+Gamut = set of colors a device can reproduce.
+
+\subsection{RGB, CMY, CMYK}
+Normalized RGB cube:
+\[
+0\le R,G,B\le 1, \qquad R=G=B \Rightarrow \text{gray}
+\]
+\[
+(0,0,0)=\text{black}, \qquad (1,1,1)=\text{white}
+\]
+24-bit RGB gives $256^3=2^{24}=16{,}777{,}216$ colors.
+
+RGB $\leftrightarrow$ CMY:
+\[
+C=1-R, \qquad M=1-G, \qquad Y=1-B
+\]
+\[
+R=1-C, \qquad G=1-M, \qquad B=1-Y
+\]
+
+CMYK from CMY:
+\[
+K=\min(C,M,Y)
+\]
+If $K\ne 1$:
+\[
+C'=\frac{C-K}{1-K}, \qquad M'=\frac{M-K}{1-K}, \qquad Y'=\frac{Y-K}{1-K}
+\]
+
+\subsection{HSI}
+Hue = basic color, saturation = purity, intensity = brightness.
+\[
+I=\frac{R+G+B}{3}
+\]
+\[
+S=1-\frac{3}{R+G+B}\min(R,G,B)
+\]
+\[
+\theta=\cos^{-1}\!\left(\frac{\frac12[(R-G)+(R-B)]}{\sqrt{(R-G)^2+(R-B)(G-B)}}\right)
+\]
+\[
+H=
+\begin{cases}
+\theta,& B\le G\\
+360^\circ-\theta,& B>G
+\end{cases}
+\]
+Hue sectors:
+\[
+0^\circ\le H<120^\circ: RG, \quad 120^\circ\le H<240^\circ: GB, \quad 240^\circ\le H<360^\circ: BR
+\]
+
+\subsection{Color Processing Rules}
+Two main approaches:
+\begin{itemize}
+\item Process each RGB channel and recombine.
+\item Convert to HSI and process only $I$ when the task is brightness, smoothing, sharpening, or histogram equalization.
+\end{itemize}
+Do not histogram-equalize RGB channels independently: different nonlinear mappings can distort hue.
+
+Brightness scaling:
+\[
+R'=kR, \qquad G'=kG, \qquad B'=kB
+\]
+or in HSI:
+\[
+I'=kI
+\]
+
+RGB complement:
+\[
+R'=1-R, \qquad G'=1-G, \qquad B'=1-B
+\]
+
+\subsection{Pseudocolor and Slicing}
+Intensity slicing:
+\[
+\mathbf g(x,y)=\mathbf c_k \quad \text{if } l_{k-1}\le f(x,y)<l_k
+\]
+Intensity-to-color mapping:
+\[
+R=T_R(f), \qquad G=T_G(f), \qquad B=T_B(f)
+\]
+
+Color distance in RGB:
+\[
+D=\sqrt{(R-a_R)^2+(G-a_G)^2+(B-a_B)^2}
+\]
+for color slicing around a target color.
+
+\end{multicols}
+\end{document}
