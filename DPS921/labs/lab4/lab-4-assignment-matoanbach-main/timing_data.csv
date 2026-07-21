@@ -1,0 +1,27 @@
+implementation,optimization,threads,time_ms,pi_calculated,notes
+serial,O0,1,3577,3.141592653589971,baseline
+serial,O3,1,977,3.141592653589971,baseline
+naive,O0,1,3629,3.141592653589971,shared array without padding
+naive,O0,2,2099,3.141592653590007,shared array without padding
+naive,O0,4,1334,3.141592653589768,shared array without padding
+naive,O0,8,1221,3.141592653589828,shared array without padding
+naive,O3,1,1018,3.141592653589971,shared array without padding
+naive,O3,2,533,3.141592653590007,shared array without padding
+naive,O3,4,279,3.141592653589768,shared array without padding
+naive,O3,8,206,3.141592653589828,shared array without padding
+padded,O0,1,3764,3.141592653589971,padded shared array to reduce false sharing
+padded,O0,2,1855,3.141592653590007,padded shared array to reduce false sharing
+padded,O0,4,1120,3.141592653589768,padded shared array to reduce false sharing
+padded,O0,8,948,3.141592653589828,padded shared array to reduce false sharing
+padded,O3,1,1043,3.141592653589971,padded shared array to reduce false sharing
+padded,O3,2,531,3.141592653590007,padded shared array to reduce false sharing
+padded,O3,4,273,3.141592653589768,padded shared array to reduce false sharing
+padded,O3,8,211,3.141592653589828,padded shared array to reduce false sharing
+synchronized,O0,1,6250,3.141592653589971,single shared sum with atomic
+synchronized,O0,2,9040,3.141592653590089,single shared sum with atomic
+synchronized,O0,4,39812,3.141592653590052,single shared sum with atomic
+synchronized,O0,8,75812,3.141592653589978,single shared sum with atomic
+synchronized,O3,1,4711,3.141592653589971,single shared sum with atomic
+synchronized,O3,2,4597,3.141592653589850,single shared sum with atomic
+synchronized,O3,4,32628,3.141592653590066,single shared sum with atomic
+synchronized,O3,8,36564,3.141592653589965,single shared sum with atomic
