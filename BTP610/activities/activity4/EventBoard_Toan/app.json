@@ -1,0 +1,17 @@
+{
+  "expo": {
+    "name": "EventBoard_Toan",
+    "slug": "EventBoard_Toan",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "scheme": "eventboardtoan",
+    "userInterfaceStyle": "automatic",
+    "plugins": [
+      "expo-router"
+    ],
+    "experiments": {
+      "typedRoutes": true,
+      "reactCompiler": true
+    }
+  }
+}

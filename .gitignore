@@ -36,5 +36,8 @@
 # Avoid committing nested git repos (course starter code sometimes includes these)
 **/.git/
 
+# Activity 4 local Firebase secrets
+BTP610/activities/activity4/EventBoard_Toan/firebaseConfig.ts
+
 # Local reference material (keep untracked)
 DPS921/Gerassimos Barlas - Multicore and GPU programming_ an integrated approach (2022, Morgan Kaufmann Publishers) - libgen.li.pdf
