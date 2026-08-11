@@ -1,0 +1,603 @@
+\documentclass[8pt,a4paper]{extarticle}
+
+\usepackage[margin=0.18in]{geometry}
+\usepackage{multicol}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{xcolor}
+\usepackage{titlesec}
+\usepackage{listings}
+
+\pagestyle{empty}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0pt}
+\setlength{\columnsep}{0.1in}
+
+\titleformat{\section}{\bfseries\small}{}{0pt}{}
+\titlespacing*{\section}{0pt}{2pt}{1pt}
+
+\lstset{
+  basicstyle=\ttfamily\fontsize{7.5}{8.1}\selectfont,
+  breaklines=true,
+  columns=fullflexible,
+  keepspaces=true,
+  showstringspaces=false,
+  frame=single,
+  framesep=1pt,
+  xleftmargin=0pt,
+  xrightmargin=0pt,
+  aboveskip=1pt,
+  belowskip=1pt,
+  framerule=0.2pt,
+  rulecolor=\color{gray!50}
+}
+
+\begin{document}
+\begin{center}
+{\small\bfseries BTP610 Test 4: W10--13 Firebase | W13--14 Camera}
+\end{center}
+\vspace{-4pt}
+
+\begin{multicols}{3}
+
+\section*{Install + Core Imports}
+\begin{lstlisting}
+import { initializeApp }
+  from "firebase/app";
+import { getAuth,
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  signOut, onAuthStateChanged, User }
+  from "firebase/auth";
+import { getFirestore, collection,
+  doc, addDoc, setDoc, getDoc,
+  getDocs, onSnapshot, updateDoc,
+  deleteDoc, DocumentData }
+  from "firebase/firestore";
+\end{lstlisting}
+
+\section*{firebaseConfig.ts}
+\begin{lstlisting}
+const firebaseConfig = {
+  apiKey: "...",
+  authDomain: "...",
+  projectId: "...",
+  storageBucket: "...",
+  messagingSenderId: "...",
+  appId: "...",
+};
+
+const app = initializeApp(firebaseConfig);
+const firebaseAuth = getAuth(app);
+const fireDB = getFirestore(app);
+
+export { app, firebaseAuth, fireDB };
+\end{lstlisting}
+
+\section*{Firestore Type}
+\begin{lstlisting}
+export type Book = {
+  id: string;     // Firestore doc ID
+  title: string;
+  author: string;
+  genre: string;
+  uid: string;    // owner Auth UID
+};
+\end{lstlisting}
+
+\section*{Auth Listener Custom Hook}
+\begin{lstlisting}
+import { onAuthStateChanged, User }
+  from "firebase/auth";
+import { useEffect, useState }
+  from "react";
+import { firebaseAuth }
+  from "./firebaseConfig";
+
+export function userAuthentication() {
+  const [user, setUser] =
+    useState<User | null | undefined>(
+      undefined
+    );
+
+  useEffect(() => {
+    const unsubscribe =
+      onAuthStateChanged(
+        firebaseAuth,
+        (currentUser) => {
+          setUser(currentUser);
+        }
+      );
+
+    return unsubscribe;
+  }, []);
+
+  return user;
+}
+\end{lstlisting}
+
+\section*{Auth Route Guard}
+\begin{lstlisting}
+import { userAuthentication }
+  from "@/userAuthentication";
+import { Redirect } from "expo-router";
+
+export default function Index() {
+  const user = userAuthentication();
+
+  if (user === undefined) {
+    return null;          // still loading
+  }
+
+  if (user === null) {
+    return <Redirect href="/signIn" />;
+  }
+
+  return <Redirect href="/BookList" />;
+}
+\end{lstlisting}
+
+\section*{Router Layouts}
+\begin{lstlisting}
+// app/_layout.tsx
+import { Stack } from "expo-router";
+export default function RootLayout() {
+  return <Stack screenOptions={{
+    headerShown: false
+  }} />;
+}
+
+// app/(auth)/_layout.tsx
+export default function AuthLayout() {
+  return (
+    <Stack>
+      <Stack.Screen name="signIn"
+        options={{ title: "Sign In" }} />
+      <Stack.Screen name="signUp"
+        options={{ title: "Sign Up" }} />
+    </Stack>
+  );
+}
+
+\end{lstlisting}
+
+\section*{Object Form State}
+\begin{lstlisting}
+const [userObject, setUserObject] =
+  useState({
+    email: "",
+    password: "",
+    confirmPassword: "",
+    fullname: "",
+    contact: "",
+    location: "",
+    error: "",
+  });
+
+// update ONE field; preserve others
+setUserObject({
+  ...userObject,
+  email: text,
+});
+\end{lstlisting}
+
+\section*{Sign Up + Save Profile}
+\begin{lstlisting}
+const router = useRouter();
+
+const onSignUp = async () => {
+  if (userObject.email === "" ||
+      userObject.password === "") {
+    setUserObject({
+      ...userObject,
+      error: "Email/password required",
+    });
+    return;
+  }
+
+  try {
+    const credential = await
+      createUserWithEmailAndPassword(
+        firebaseAuth,
+        userObject.email,
+        userObject.password
+      );
+
+    const profile = {
+      name: userObject.fullname,
+      email: userObject.email,
+      contact: userObject.contact,
+      location: userObject.location,
+    };
+
+    await setDoc(
+      doc(fireDB, "userProfile",
+        credential.user.uid),
+      profile
+    );
+
+    router.replace("/BookList");
+  } catch (error: any) {
+    setUserObject({
+      ...userObject,
+      error: error.message,
+    });
+  }
+};
+\end{lstlisting}
+
+\section*{Sign-Up Inputs}
+\begin{lstlisting}
+<TextInput
+  value={userObject.email}
+  onChangeText={(text) =>
+    setUserObject({
+      ...userObject, email: text
+    })
+  }
+  keyboardType="email-address"
+  autoCapitalize="none"
+/>
+
+{!!userObject.error && (
+  <Text>{userObject.error}</Text>
+)}
+
+<TouchableOpacity onPress={onSignUp}>
+  <Text>Sign Up</Text>
+</TouchableOpacity>
+\end{lstlisting}
+
+\section*{Sign In}
+\begin{lstlisting}
+const onSignIn = async () => {
+  if (!userObject.email ||
+      !userObject.password) {
+    setUserObject({
+      ...userObject,
+      error: "Email/password required",
+    });
+    return;
+  }
+
+  try {
+    const result = await
+      signInWithEmailAndPassword(
+        firebaseAuth,
+        userObject.email,
+        userObject.password
+      );
+
+    Alert.alert(
+      "Success",
+      `Welcome ${result.user.email}`,
+      [{ text: "Okay", onPress: () =>
+        router.replace("/BookList") }]
+    );
+  } catch (error: any) {
+    setUserObject({
+      ...userObject,
+      error: error.message,
+    });
+  }
+};
+\end{lstlisting}
+
+\end{multicols}
+\newpage
+\begin{center}
+{\small\bfseries BTP610 Test 4: Firestore CRUD, Live Lists, Tabs + Camera}
+\end{center}
+\vspace{-4pt}
+\begin{multicols}{3}
+
+\section*{Add Firestore Document}
+\begin{lstlisting}
+const [book, setBook] = useState<Book>({
+  id: "", title: "", author: "",
+  genre: "", uid: "",
+});
+
+const addBook = async () => {
+  if (!book.title || !book.author ||
+      !book.genre) {
+    Alert.alert("Error", "Fill all fields");
+    return;
+  }
+
+  try {
+    const newBook = {
+      title: book.title,
+      author: book.author,
+      genre: book.genre,
+      uid: firebaseAuth.currentUser?.uid,
+    };
+
+    const collectionRef =
+      collection(fireDB, "BookDB");
+    const docRef = await addDoc(
+      collectionRef, newBook
+    );
+
+    Alert.alert("Added", docRef.id);
+    setBook({
+      ...book, title: "", author: "",
+      genre: ""
+    });
+  } catch (error) {
+    console.log(error);
+  }
+};
+\end{lstlisting}
+
+\section*{One-Time Profile Read}
+\begin{lstlisting}
+const [profile, setProfile] =
+  useState<DocumentData>({
+    email: "N/A", name: "N/A",
+    contact: "N/A", location: "N/A",
+  });
+
+const getUserProfile = async () => {
+  const uid = firebaseAuth.currentUser!.uid;
+  const profileRef =
+    doc(fireDB, "userProfile", uid);
+  const docSnap = await getDoc(profileRef);
+
+  if (docSnap.exists()) {
+    setProfile(docSnap.data());
+  } else {
+    Alert.alert("No profile found");
+  }
+};
+
+useEffect(() => {
+  getUserProfile();
+}, []);
+\end{lstlisting}
+
+\section*{Real-Time Collection Read}
+\begin{lstlisting}
+const [bookList, setBookList] =
+  useState<Book[]>([]);
+
+useEffect(() => {
+  const unsubscribe = onSnapshot(
+    collection(fireDB, "BookDB"),
+    (snapshot) => {
+      const books: Book[] =
+        snapshot.docs.map((bookDoc) => ({
+          id: bookDoc.id,
+          title: bookDoc.data().title,
+          author: bookDoc.data().author,
+          genre: bookDoc.data().genre,
+          uid: bookDoc.data().uid,
+        }));
+
+      setBookList(books);
+    }
+  );
+
+  return unsubscribe;
+}, []);
+\end{lstlisting}
+
+\section*{FlatList + Item Component}
+\begin{lstlisting}
+<FlatList
+  data={bookList}
+  keyExtractor={(item) => item.id}
+  renderItem={({ item }) => (
+    <View>
+      <Text>{item.title}</Text>
+      <Text>{item.author}</Text>
+    </View>
+  )}
+/>
+\end{lstlisting}
+
+\section*{Update Document}
+\begin{lstlisting}
+const bookRef =
+  doc(fireDB, "BookDB", book.id);
+
+const updateBook = async () => {
+  try {
+    await updateDoc(bookRef, {
+      title: `Updated ${book.title}`,
+      author: `Updated ${book.author}`,
+      genre: `Updated ${book.genre}`,
+    });
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+updateDoc updates ONLY listed fields;
+other document fields stay unchanged.
+\end{lstlisting}
+
+\section*{Delete Document + Alert}
+\begin{lstlisting}
+const deleteBook = () => {
+  Alert.alert(
+    book.title,
+    "Delete this book?",
+    [
+      { text: "No", style: "cancel" },
+      {
+        text: "Yes",
+        onPress: async () => {
+          await deleteDoc(bookRef);
+        },
+      },
+    ]
+  );
+};
+
+// optional owner-only UI/action guard
+const isOwner =
+  firebaseAuth.currentUser?.uid ===
+  book.uid;
+
+{isOwner && (
+  <TouchableOpacity onPress={deleteBook}>
+    <Text>Delete</Text>
+  </TouchableOpacity>
+)}
+\end{lstlisting}
+
+\section*{Tabs + Sign Out Header}
+\begin{lstlisting}
+import { Tabs, useRouter }
+  from "expo-router";
+import MaterialIcons
+  from "@expo/vector-icons/MaterialIcons";
+import { signOut } from "firebase/auth";
+import { firebaseAuth }
+  from "@/firebaseConfig";
+
+export default function TabsLayout() {
+  const router = useRouter();
+
+  return (
+    <Tabs>
+      <Tabs.Screen name="BookList"
+        options={{
+          title: "Books",
+          tabBarActiveTintColor: "orange",
+          tabBarIcon: ({ color }) =>
+            <MaterialIcons name="home"
+              size={24} color={color} />,
+          headerRight: () =>
+            <MaterialIcons
+              name="exit-to-app" size={24}
+              onPress={async () => {
+                await signOut(firebaseAuth);
+                router.replace("/signIn");
+              }}
+            />,
+        }}
+      />
+
+      <Tabs.Screen name="NewBook"
+        options={{ title: "Add Book" }} />
+      <Tabs.Screen name="UserProfile"
+        options={{ title: "Profile" }} />
+    </Tabs>
+  );
+}
+\end{lstlisting}
+
+\section*{Camera Imports + State}
+\begin{lstlisting}
+import { CameraType, CameraView,
+  useCameraPermissions }
+  from "expo-camera";
+import * as MediaLibrary
+  from "expo-media-library";
+import { useEffect, useRef, useState }
+  from "react";
+import { Alert, Button, Text }
+  from "react-native";
+
+const [cameraPermission,
+  requestCameraPermission] =
+  useCameraPermissions();
+
+const [mediaPermission,
+  requestMediaPermission] =
+  MediaLibrary.usePermissions({
+    granularPermissions: ["photo"],
+  });
+
+const cameraRef = useRef<CameraView>(null);
+const isCameraReady = useRef(false);
+const [cameraType, setCameraType] =
+  useState<CameraType>("back");
+\end{lstlisting}
+
+\section*{Request Both Permissions}
+\begin{lstlisting}
+const checkPermission = async () => {
+  await requestCameraPermission();
+
+  try {
+    await requestMediaPermission();
+  } catch (error) {
+    console.log("Media request skipped");
+  }
+};
+
+useEffect(() => {
+  checkPermission();
+}, []);
+
+camera permission -> use camera
+media permission -> save to gallery
+They are SEPARATE permissions.
+\end{lstlisting}
+
+\section*{Permission UI}
+\begin{lstlisting}
+{cameraPermission?.granted && (
+  <CameraView
+    ref={cameraRef}
+    style={{ flex: 1 }}
+    facing={cameraType}
+    onCameraReady={() => {
+      isCameraReady.current = true;
+    }}
+  />
+)}
+
+Only render CameraView after permission.
+\end{lstlisting}
+
+\section*{Flip Camera}
+\begin{lstlisting}
+const toggleCameraType = () => {
+  setCameraType((current) =>
+    current === "back" ? "front" : "back"
+  );
+};
+
+<Button title="Flip Camera"
+  onPress={toggleCameraType} />
+\end{lstlisting}
+
+\section*{Take + Save Photo}
+\begin{lstlisting}
+const takePhoto = async () => {
+  try {
+    if (!mediaPermission?.granted) {
+      Alert.alert("Gallery permission needed");
+      return;
+    }
+
+    if (!cameraRef.current ||
+        !isCameraReady.current) {
+      console.log("Camera not ready");
+      return;
+    }
+
+    const photo = await
+      cameraRef.current.takePictureAsync();
+
+    await MediaLibrary.createAssetAsync(
+      photo.uri
+    );
+
+    Alert.alert("Saved to gallery");
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+<Button title="Take Photo"
+  onPress={takePhoto} />
+\end{lstlisting}
+
+\end{multicols}
+\end{document}

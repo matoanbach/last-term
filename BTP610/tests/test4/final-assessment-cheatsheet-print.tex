@@ -1,0 +1,187 @@
+\documentclass[10pt,a4paper]{article}
+
+\usepackage[margin=0.27in]{geometry}
+\usepackage{multicol}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{enumitem}
+\usepackage{titlesec}
+
+\pagestyle{empty}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0pt}
+\setlength{\columnsep}{0.13in}
+\linespread{0.90}
+\setlist[itemize]{leftmargin=*, itemsep=0pt, topsep=0.5pt, parsep=0pt, partopsep=0pt}
+\setlist[enumerate]{leftmargin=*, itemsep=0pt, topsep=0.5pt, parsep=0pt, partopsep=0pt}
+
+\titleformat{\section}{\bfseries\normalsize}{}{0pt}{}
+\titlespacing*{\section}{0pt}{1.5pt}{0.2pt}
+
+\begin{document}
+
+\textbf{Student Name:} \rule[0pt]{2.35in}{0.4pt} \hfill
+\textbf{Student ID:} \rule[0pt]{1.55in}{0.4pt}
+
+\begin{center}
+\textbf{BTP610 Test 4 / Final Assessment Reference Sheet}\\[-2pt]
+Firebase \textbar{} Firestore \textbar{} Hooks \textbar{} Expo Router \textbar{} Camera
+\end{center}
+\vspace{-5pt}
+
+\begin{multicols}{3}
+
+\section*{Firebase Setup}
+\begin{itemize}
+  \item \texttt{initializeApp(config)}: Firebase app.
+  \item \texttt{getAuth(app)}: Authentication service.
+  \item \texttt{getFirestore(app)}: Firestore service.
+  \item \texttt{firebaseConfig.ts}: project connection settings; exports shared instances for reuse.
+  \item Auth: credentials. Firestore: app data.
+\end{itemize}
+
+\section*{Authentication API}
+\begin{itemize}
+  \item \texttt{createUserWithEmailAndPassword}: create account; arguments are auth, email, password; returns \texttt{UserCredential}.
+  \item \texttt{signInWithEmailAndPassword}: sign in existing account; same arguments/return type.
+  \item \texttt{signOut(auth)}: sign out current user.
+  \item Credential values: \texttt{user.uid} (unique Auth ID), \texttt{user.email}.
+  \item Await auth calls inside \texttt{try/catch}.
+\end{itemize}
+
+\section*{Auth State}
+\begin{itemize}
+  \item \texttt{undefined}: still checking; do not route.
+  \item \texttt{null}: check finished; logged out.
+  \item \texttt{User}: logged-in user object.
+  \item Type: \texttt{User | null | undefined}.
+  \item \texttt{onAuthStateChanged}: listens for sign-in/out; returns unsubscribe cleanup.
+\end{itemize}
+
+\section*{Sign-Up Flow}
+Validate $\rightarrow$ create Auth account $\rightarrow$ read UID $\rightarrow$ save non-password profile in Firestore at UID $\rightarrow$ route.
+
+\section*{Firestore Model / IDs}
+\begin{itemize}
+  \item Structure: Collection $\rightarrow$ Document $\rightarrow$ Fields.
+  \item \texttt{collection(db,name)}: collection reference, not data/array.
+  \item \texttt{doc(db,collection,id)}: one document reference.
+  \item Snapshot: \texttt{doc.id} = ID; \texttt{doc.data()} = fields.
+  \item \texttt{BookDB}: auto IDs for independent records.
+  \item \texttt{userProfile}: Auth UID as known ID for direct lookup.
+  \item Store \texttt{uid} in user-owned records to link data to its owner.
+\end{itemize}
+
+\section*{Firestore CRUD}
+\begin{itemize}
+  \item \texttt{addDoc(collectionRef,data)}: create with auto ID; returns document reference.
+  \item \texttt{setDoc(documentRef,data)}: write at known ID; replaces by default.
+  \item \texttt{getDoc(documentRef)}: one-time document read.
+  \item \texttt{getDocs(collectionRef)}: one-time collection read.
+  \item \texttt{updateDoc(documentRef,fields)}: change selected fields; preserve others.
+  \item \texttt{deleteDoc(documentRef)}: permanent delete.
+\end{itemize}
+
+\section*{Real-Time vs. One-Time}
+\begin{itemize}
+  \item \texttt{getDoc/getDocs}: read once; later changes do not update UI.
+  \item \texttt{onSnapshot(ref,callback)}: current data, then callback after each matching add/edit/delete.
+  \item \texttt{snapshot.docs}: current matching documents.
+  \item List: map snapshots to \texttt{id + data()}, then set state.
+  \item Flow: DB change $\rightarrow$ callback $\rightarrow$ snapshot $\rightarrow$ state $\rightarrow$ UI.
+  \item It returns unsubscribe; use as \texttt{useEffect} cleanup to avoid leaks/duplicates.
+\end{itemize}
+
+\section*{Hooks}
+\begin{itemize}
+  \item \texttt{useState}: value affects UI; setter causes re-render. Never mutate state directly.
+  \item \texttt{useRef}: remembers value/component through \texttt{.current}; change does not re-render.
+  \item State: form/errors/list/camera facing. Ref: camera component/readiness.
+  \item \texttt{useEffect}: side effects after render.
+  \item No dependency array: every render. Empty \texttt{[]}: mount once. Listed dependencies: mount + when changed.
+  \item Returned function: cleanup before rerun and on unmount.
+\end{itemize}
+
+\section*{Object State / Custom Hook}
+\begin{itemize}
+  \item Field update: spread existing object, then override target field; no spread loses other fields.
+  \item \texttt{!!value}: Boolean conversion; empty string false, non-empty true.
+  \item Custom hook begins with \texttt{use}; reuses hook/listener logic. Auth hook listens, stores user, cleans up, returns user.
+\end{itemize}
+
+\section*{Expo Router}
+\begin{itemize}
+  \item Files/folders under \texttt{app/} map to routes; \texttt{index.tsx} is directory default.
+  \item \texttt{\_layout.tsx}: Stack/Tabs configuration and wrapper.
+  \item \texttt{(auth)/(welcome)/(tabs)}: organization only; no URL segment.
+  \item \texttt{Redirect}: route decision during render.
+  \item \texttt{navigate/push}: add route; Back can return.
+  \item \texttt{replace}: replace route; Back cannot return. Use after login/logout.
+\end{itemize}
+
+\section*{Auth Routing Decision}
+Open $\rightarrow$ check auth: \texttt{undefined} $\rightarrow$ wait; \texttt{null} $\rightarrow$ sign-in; \texttt{User} $\rightarrow$ app. Early routing can flash wrong screen.
+
+\section*{Stacks, Tabs, Headers}
+\begin{itemize}
+  \item \texttt{Stack}: history/back. \texttt{Tabs}: persistent sibling navigation.
+  \item \texttt{Tabs.Screen}: title, icon, header, tab options.
+  \item \texttt{tabBarActiveTintColor}: active icon/label color.
+  \item \texttt{headerRight}: header button/icon; \texttt{headerShown}: show/hide header.
+\end{itemize}
+
+\section*{FlatList / Components}
+\begin{itemize}
+  \item Props: \texttt{data}, \texttt{renderItem}, \texttt{keyExtractor}.
+  \item Stable unique key required; Firestore document ID works.
+  \item \texttt{renderItem} receives \texttt{item}; reusable item component improves clarity.
+\end{itemize}
+
+\section*{Forms / TextInput}
+\begin{itemize}
+  \item Controlled input: \texttt{value} from state; \texttt{onChangeText} updates state.
+  \item Validate before async call; return early if invalid.
+  \item \texttt{secureTextEntry}: hide password. \texttt{keyboardType}: email/phone keyboard. \texttt{autoCapitalize}: \texttt{none/words}.
+  \item Non-empty error string is truthy; use for conditional display.
+\end{itemize}
+
+\section*{Camera / Permissions}
+\begin{itemize}
+  \item Packages: \texttt{expo-camera}, \texttt{expo-media-library}.
+  \item \texttt{CameraView}: preview; \texttt{CameraType}: \texttt{front/back}.
+  \item \texttt{useCameraPermissions()}: camera status + request function.
+  \item \texttt{MediaLibrary.usePermissions()}: separate gallery status + request.
+  \item Camera permission permits capture; media permission permits saving. One does not grant the other.
+\end{itemize}
+
+\section*{Camera Flow / API}
+\begin{enumerate}
+  \item Request both permissions; render camera only if granted.
+  \item Attach \texttt{useRef<CameraView>}; track \texttt{onCameraReady}.
+  \item Guard action: mounted, ready, ref not null.
+  \item \texttt{takePictureAsync()}: capture; result has \texttt{uri}.
+  \item \texttt{createAssetAsync(uri)}: save to gallery.
+  \item Change facing state to toggle front/back.
+\end{enumerate}
+
+\section*{Expo Go Limitation}
+Album browse/create/add APIs need full media access and may require a dedicated development build, not Expo Go.
+
+\section*{End-to-End Flows}
+\begin{itemize}
+  \item Sign in: auth call $\rightarrow$ state change $\rightarrow$ listener gets User $\rightarrow$ app route.
+  \item CRUD: action $\rightarrow$ Firestore $\rightarrow$ snapshot $\rightarrow$ state $\rightarrow$ UI.
+  \item Sign out $\rightarrow$ user null $\rightarrow$ sign-in route.
+\end{itemize}
+
+\section*{Common Traps}
+\begin{itemize}
+  \item Reference $\ne$ data; \texttt{undefined} $\ne$ logged out.
+  \item Listener needs cleanup; route group $\ne$ URL segment.
+  \item Ref change $\ne$ re-render; camera permission $\ne$ media permission.
+  \item Guard camera permission/readiness; preserve object fields with spread.
+\end{itemize}
+
+\end{multicols}
+\end{document}
