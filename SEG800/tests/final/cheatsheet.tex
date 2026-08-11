@@ -1,0 +1,461 @@
+\documentclass[8pt]{extarticle}
+
+\usepackage[margin=0.25in]{geometry}
+\usepackage{multicol}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{array}
+
+\makeatletter
+\renewcommand\section{\@startsection{section}{1}{0pt}{0.4ex}{0.15ex}{\normalfont\small\bfseries}}
+\renewcommand\subsection{\@startsection{subsection}{2}{0pt}{0.2ex}{0.05ex}{\normalfont\bfseries}}
+\def\@listi{\leftmargin\leftmargini \topsep 0pt \parsep 0pt \itemsep 0pt}
+\makeatother
+
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0.05em}
+\setlength{\columnsep}{0.13in}
+\setlength{\columnseprule}{0.1pt}
+\setlength{\abovedisplayskip}{0.5pt}
+\setlength{\belowdisplayskip}{0.5pt}
+\setlength{\abovedisplayshortskip}{0.5pt}
+\setlength{\belowdisplayshortskip}{0.5pt}
+\pagestyle{empty}
+
+\newcommand{\key}[1]{\textbf{#1}}
+\newcommand{\Z}{\mathcal Z}
+
+\begin{document}
+
+{\Large\textbf{SEG800 Final Test Cheatsheet}}\\[-0.15em]
+{\small Cumulative DSP + Digital Image Processing; dated-review problems emphasized}
+\vspace{0.15em}\hrule\vspace{0.25em}
+
+\scriptsize
+\begin{multicols}{2}
+
+\section{Final-Test Attack}
+\key{Lecturer priorities:} worksheets IP1--IP5; z-transform lookup/inversion; review problems: shifted convolution, delayed-sum magnitude/phase, separable-kernel proof/count. Show formula $\to$ substitution $\to$ units/ROC/padding $\to$ interpretation. Use $\operatorname{atan2}$; convolution flips, correlation does not.
+
+\section{DSP I: Signals and LTI Systems}
+
+\subsection{Signal Essentials}
+$x[n]=\sum_kx[k]\delta[n-k]$; $u[n]=1$ for $n\ge0$. Shift $x[n-n_0]$ right; fold $x[-n]$. Periodic iff $x[n+N]=x[n]$; $e^{j\omega_0n}$ iff $\omega_0/(2\pi)$ rational.
+\[
+E=\sum_n|x[n]|^2,\quad P=\lim_{N\to\infty}\frac{1}{2N+1}\sum_{-N}^{N}|x[n]|^2,\quad
+x_{e/o}[n]=\tfrac12(x[n]\pm x[-n])
+\]
+
+\subsection{System Tests and Convolution}
+Linearity: $T\{a x_1+b x_2\}=aT\{x_1\}+bT\{x_2\}$. TI: shifting input by $n_0$ shifts output by $n_0$. Causal: output at $n$ uses no $x[k]$, $k>n$. BIBO: bounded input $\Rightarrow$ bounded output.
+\[
+y[n]=(x*h)[n]=\sum_{k=-\infty}^{\infty}x[k]h[n-k]
+\]
+For LTI: causal iff $h[n]=0$ for $n<0$; stable iff $\sum_n|h[n]|<\infty$. Convolution is commutative, associative, distributive; $x*\delta=x$; $x*\delta[n-n_0]=x[n-n_0]$.
+
+\key{Finite supports:} if $x$ starts/ends at $n_x^-,n_x^+$ and $h$ at $n_h^-,n_h^+$, then $y$ spans $n_x^-+n_h^-$ through $n_x^++n_h^+$ and $L_y=L_x+L_h-1$.
+
+\subsection{[REVIEW] Shifted-Step Convolution}
+Given $h[n]=a^nu[n]$, $|a|<1$:
+\[
+s[n]=(u*h)[n]=\sum_{r=0}^{n}a^r=\frac{1-a^{n+1}}{1-a}u[n]
+\]
+For $x[n]=u[n+5]-u[n-10]$, define $t[n]=(x*h)[n]$:
+\[
+t[n]=s[n+5]-s[n-10]
+\]
+\[
+t[n]=\frac{1-a^{n+6}}{1-a}u[n+5]-\frac{1-a^{n-9}}{1-a}u[n-10]
+\]
+Two branches, upper added and delayed-by-2 lower subtracted:
+\[
+y[n]=x[n]*h[n]-x[n-2]*h[n]=t[n]-t[n-2]
+\]
+\[
+t[n-2]=\frac{1-a^{n+4}}{1-a}u[n+3]-\frac{1-a^{n-11}}{1-a}u[n-12]
+\]
+Do not confuse shifting one convolution input with replacing only its variable: $(x[n-n_0]*h[n])=(x*h)[n-n_0]$.
+
+\subsection{Difference Equations}
+For zero initial conditions,
+\[
+y[n]+\sum_{k=1}^{N}a_k y[n-k]=\sum_{k=0}^{M}b_kx[n-k]
+\]
+\[
+H(z)=\frac{Y(z)}{X(z)}=\frac{\sum_{k=0}^{M}b_kz^{-k}}{1+\sum_{k=1}^{N}a_kz^{-k}}
+\]
+FIR: finite $h[n]$, usually nonrecursive. IIR: infinite $h[n]$, usually recursive.
+
+\section{DSP II: z-Transform and DTFT}
+
+\subsection{z-Transform Quick-Lookup Table}
+\[
+X(z)=\sum_{n=-\infty}^{\infty}x[n]z^{-n},\qquad q=z^{-1},\quad D_a=1-aq
+\]
+\begin{center}
+\renewcommand{\arraystretch}{1.18}
+\begin{tabular}{@{}>{$}l<{$} >{$}l<{$} l@{}}
+\textbf{Sequence }x[n] & \textbf{Transform }X(z) & \textbf{ROC}\\ \hline
+\delta[n] & 1 & all $z$\\
+\delta[n-k] & z^{-k} & $z\ne0$ if $k>0$\\
+u[n] & 1/(1-q) & $|z|>1$\\
+u[n-k] & z^{-k}/(1-q) & $|z|>1$\\
+a^nu[n] & 1/D_a & $|z|>|a|$\\
+-a^nu[-n-1] & 1/D_a & $|z|<|a|$\\
+a^nu[-n-1] & -1/D_a & $|z|<|a|$\\
+na^nu[n] & aq/D_a^2 & $|z|>|a|$\\
+-na^nu[-n-1] & aq/D_a^2 & $|z|<|a|$\\
+(n+1)a^nu[n] & 1/D_a^2 & $|z|>|a|$\\
+a^n[u[n]-u[n-N]] & \dfrac{1-(aq)^N}{1-aq} & $N>1:\ z\ne0$\\
+\end{tabular}
+\end{center}
+Let $D_{a,\omega}=1-2a\cos\omega\,q+a^2q^2$:
+\[
+\begin{aligned}
+a^n\cos(\omega_0n)u[n]&\longleftrightarrow
+\frac{1-a\cos\omega_0\,q}{D_{a,\omega_0}},& |z|&>|a|,\\
+a^n\sin(\omega_0n)u[n]&\longleftrightarrow
+\frac{a\sin\omega_0\,q}{D_{a,\omega_0}},& |z|&>|a|.
+\end{aligned}
+\]
+Set $a=1$ for undamped sine/cosine. Repeated pole $(1-pq)^{-m}$ produces a degree-$(m-1)$ polynomial in $n$ times $p^n$.
+
+\subsection{z-Transform Properties and ROC}
+\[
+\begin{array}{rcl@{\qquad}rcl}
+x[n-k]&\leftrightarrow&z^{-k}X(z)&c^nx[n]&\leftrightarrow&X(c^{-1}z)\\
+x[-n]&\leftrightarrow&X(z^{-1})&nx[n]&\leftrightarrow&-z\,dX/dz\\
+x_1*x_2&\leftrightarrow&X_1X_2&x^*[n]&\leftrightarrow&X^*(z^*)
+\end{array}
+\]
+Initial value for causal $x$: $x[0]=\lim_{z\to\infty}X(z)$. DTFT is $X(e^{j\omega})$ only when the unit circle lies in the ROC.
+
+ROC excludes poles. Right-sided: outside outermost pole; left-sided: inside innermost pole; two-sided: annulus. Causal rational: ROC includes infinity. Stable: ROC includes $|z|=1$. Causal rational stable: every uncancelled pole is strictly inside the unit circle. Same algebraic $X(z)$ can represent different sequences; \key{ROC decides sidedness}.
+
+\subsection{Inverse z-Transform Attack}
+\key{Workflow:} factor/cancel removable factors $\to$ make proper $\to$ partial fractions or power series $\to$ use ROC to assign sidedness. Polynomial terms $c_kz^{-k}$ become $c_k\delta[n-k]$.
+\[
+X(z)=P(z^{-1})+\sum_k\frac{A_k}{1-p_kz^{-1}},\qquad
+A_k=\left.\frac{(z-p_k)X(z)}{z}\right|_{z=p_k}
+\]
+Residue shortcut above: distinct simple poles; repeated poles need repeated-pole partial fractions/derivatives.
+\[
+\frac{A}{1-pz^{-1}}\longleftrightarrow
+\begin{cases}Ap^nu[n],&|z|>|p|\\-Ap^nu[-n-1],&|z|<|p|\end{cases}
+\]
+Exterior ROC: all pole terms right-sided. Interior ROC: all left-sided. Annular ROC: poles inside the annulus's inner boundary give right-sided terms; poles outside its outer boundary give left-sided terms. For a \emph{right-sided} conjugate pair $p=re^{j\omega_0}$, combine residues into $2|A|r^n\cos(\omega_0n+\angle A)u[n]$.
+
+\subsection{DTFT and Properties}
+\[
+X(\omega)=\sum_nx[n]e^{-j\omega n},\qquad
+x[n]=\frac1{2\pi}\int_{-\pi}^{\pi}X(\omega)e^{j\omega n}\,d\omega
+\]
+$X(\omega)$ is $2\pi$-periodic; it is continuous when $\sum_n|x[n]|<\infty$. Useful pairs/properties:
+\[
+a^nu[n]\leftrightarrow\frac1{1-ae^{-j\omega}},\ |a|<1;\quad
+x[n-n_0]\leftrightarrow e^{-j\omega n_0}X(\omega)
+\]
+\[
+e^{j\omega_0n}x[n]\leftrightarrow X(\omega-\omega_0),\quad
+nx[n]\leftrightarrow j\frac{dX}{d\omega},\quad x*h\leftrightarrow XH
+\]
+Real $x[n]$: $X(\omega)=X^*(-\omega)$; $|X|,\Re X$ even; $\Im X$ and phase odd (phase modulo $2\pi$, away from zeros).
+\[
+\sum_n|x[n]|^2=\frac1{2\pi}\int_{-\pi}^{\pi}|X(\omega)|^2d\omega
+\]
+Length-$N$ rectangle, $0\le n\le N-1$:
+\[
+X(\omega)=e^{-j\omega(N-1)/2}\frac{\sin(N\omega/2)}{\sin(\omega/2)}
+\]
+At $\omega=2\pi k$, use the removable-limit value $X=N$.
+
+\subsection{[REVIEW] Magnitude and Phase}
+For $y[n]=x[n]+x[n-L]$:
+\[
+H(\omega)=1+e^{-jL\omega}=2\cos(L\omega/2)e^{-jL\omega/2}
+\]
+\[
+|H|=2|\cos(L\omega/2)|,\quad
+\angle H=\begin{cases}-L\omega/2,&\cos(L\omega/2)>0\\-L\omega/2+\pi,&\cos(L\omega/2)<0\end{cases}
+\]
+(phase modulo $2\pi$; undefined at zeros). For the review $L=4$:
+\[
+H=2\cos(2\omega)e^{-j2\omega},\quad |H|=2|\cos2\omega|,\quad \angle H=-2\omega\ (+\pi\text{ if }\cos2\omega<0)
+\]
+General: $|A/B|=|A|/|B|$, $\angle(A/B)=\angle A-\angle B$; $|e^{-j\omega n_0}|=1$, phase $=-\omega n_0$.
+
+\key{First-order smoother template:}
+\[
+y[n]=ay[n-1]+bx[n]\Rightarrow H(\omega)=\frac{b}{1-ae^{-j\omega}}
+\]
+\[
+|H|=\frac{|b|}{\sqrt{1+a^2-2a\cos\omega}},\quad
+\angle H=\angle b-\operatorname{atan2}(a\sin\omega,1-a\cos\omega)
+\]
+For unity DC gain choose $b=1-a$; stability requires $|a|<1$.
+
+\subsection{Sinusoidal Eigenfunction and Sampling}
+\[
+x[n]=A\cos(\omega_0n+\phi)\Rightarrow y[n]=A|H(\omega_0)|\cos(\omega_0n+\phi+\angle H(\omega_0))
+\]
+\[
+F_s=1/T,\quad \omega=2\pi F/F_s,\quad F=\omega F_s/(2\pi)
+\]
+Nyquist: $F_s>2B$ (endpoint equality requires special assumptions). Fold aliases into $[-F_s/2,F_s/2]$ using $F_a=F-kF_s$.
+
+\section{DSP III: Filters, DFT, DCT, FFT}
+
+\subsection{Pole-Zero Filter Reading}
+$H(\omega)=H(z)|_{z=e^{j\omega}}$, $|H|=|G|\prod|e^{j\omega}-z_k|/\prod|e^{j\omega}-p_k|$. Unit-circle zero: null; nearby pole: resonance; radius near 1: narrower/longer decay. Real coefficients need conjugate pairs; $\tau_g=-d\angle H/d\omega$. Comb $1+gz^{-D}$ gives periodic minima (exact nulls if $|g|=1$); all-pass changes phase only.
+
+\subsection{DFT, Circular Convolution, FFT}
+\[
+X[k]=\sum_{n=0}^{N-1}x[n]e^{-j2\pi kn/N},\qquad
+x[n]=\frac1N\sum_{k=0}^{N-1}X[k]e^{j2\pi kn/N}
+\]
+$W_N=e^{-j2\pi/N}$; $X[k]=\sum_nx[n]W_N^{kn}$. DFT multiplication $\leftrightarrow$ $N$-point circular convolution. For linear convolution zero-pad to $N\ge L_x+L_h-1$.
+\[
+X[k]=E[k]+W_N^kO[k],\qquad X[k+N/2]=E[k]-W_N^kO[k]
+\]
+Radix-2 FFT: $N=2^m$; direct DFT $N^2$ multiplies vs FFT $(N/2)\log_2N$. Leakage: rectangular window has narrow main lobe/high sidelobes; Hann reverses that tradeoff. STFT gives local spectra; DCT is real and energy-compacting for compression.
+
+\section{DIP I: Fundamentals and Transforms}
+
+\subsection{Sampling, Quantization, Resolution}
+$M\times N$, $k$ bpp: storage $MNk$ bits and $L=2^k$ levels. Sampling discretizes space; quantization discretizes amplitude. Cones: bright/color; rods: dim. Enhancement subjective; restoration model-based. Affine preserves parallelism; projective preserves lines. Weber $\Delta I_c/I$: smaller is better.
+
+\subsection{Optics and Pixel Geometry}
+Thin lens and magnification:
+\[
+\frac1f=\frac1{d_o}+\frac1{d_i},\qquad m=\frac{h_i}{h_o}=-\frac{d_i}{d_o}
+\]
+$d_o=fd_i/(d_i-f)$. \key{IP1:} $h_o=2$ m, $d_o=5$ m, $d_i=17$ mm $\Rightarrow |h_i|=6.8$ mm, $f=16.94$ mm; not within 1.5-mm fovea. Match units; $m<0$ means inversion.
+
+For pixels $p=(x,y)$, $q=(s,t)$:
+\[
+\begin{aligned}
+D_E&=\sqrt{(x-s)^2+(y-t)^2},\\
+D_4&=|x-s|+|y-t|,\qquad D_8=\max(|x-s|,|y-t|)
+\end{aligned}
+\]
+\[
+D_p=\left(|x-s|^p+|y-t|^p\right)^{1/p}
+\]
+\key{IP1:} $(3,4)\to(7,1)$: $D_E=5,D_4=7,D_8=4,D_3=\sqrt[3]{91}=4.498$.
+
+$N_4$: horizontal/vertical; $N_D$: diagonals; $N_8=N_4\cup N_D$. \key{Adjacency:} both values in $V$ $\to$ check geometry; a diagonal is m-adjacent only if common $N_4$ contains no pixel in $V$.
+
+\subsection{Point and Geometric Transforms}
+Negative: $s=L-1-r$. Log: $s=c\ln(1+r)$ expands dark levels (IP2 uses $c=45$). Gamma: $s=cr^\gamma$; $\gamma<1$ brightens, $\gamma>1$ darkens. Threshold: $s=0$ if $r<T$, else $L-1$. Evaluate $\to$ round as stated $\to$ clip to $[0,L-1]$.
+
+Homogeneous coordinates (column-vector convention):
+\[
+\begin{bmatrix}x'\\y'\\1\end{bmatrix}=
+\underbrace{\begin{bmatrix}1&0&t_x\\0&1&t_y\\0&0&1\end{bmatrix}}_T
+\underbrace{\begin{bmatrix}\cos\theta&-\sin\theta&0\\\sin\theta&\cos\theta&0\\0&0&1\end{bmatrix}}_R
+\underbrace{\begin{bmatrix}s_x&0&0\\0&s_y&0\\0&0&1\end{bmatrix}}_S
+\begin{bmatrix}x\\y\\1\end{bmatrix}
+\]
+Rightmost acts first; inverse mapping avoids holes. Nearest: fast/blocky; bilinear: smooth; bicubic: sharper. \key{IP2:} $45^\circ$ CCW, scale 2, translate $(3,4)$: $H=TSR$ maps $(2,3)\to(1.586,11.071)$. Declare $(x,y)$ vs row/column; geometry moves locations, not ideal intensity.
+
+\subsection{Histograms}
+$h(r_k)=n_k$, normalized $p(r_k)=n_k/(MN)$.
+\[
+s_k=Q\!\left((L-1)\sum_{j=0}^{k}p(r_j)\right),\qquad Q=\text{round or floor as specified}
+\]
+HE spreads intensities but may amplify noise. \key{IP2:} 2-bit counts $(80,800,0,20)$ give CDF $(.0889,.9778,.9778,1)$; rounding maps $(0,1,2,3)\mapsto(0,3,3,3)$.
+
+\section{DIP II: Spatial Filtering}
+
+\subsection{Correlation, Convolution, Noise}
+\[
+g(x,y)=\sum_{s=-a}^{a}\sum_{t=-b}^{b}w(s,t)f(x+s,y+t)\quad\text{(correlation)}
+\]
+Convolution uses $f(x-s,y-t)$, equivalently rotate $w$ by $180^\circ$. Symmetric kernel: same result. Smoothing kernels usually sum to 1; derivative kernels sum to 0. Same-size odd kernel: pad by half-width/height.
+
+\key{Hand workflow:} decide full/same/valid output and padding $\to$ flip kernel only for convolution $\to$ center at target $\to$ elementwise multiply and sum. The IP3 symmetric kernel $\left[\begin{smallmatrix}1&2&1\\2&4&2\\1&2&1\end{smallmatrix}\right]$ gives identical correlation and convolution; a nonsymmetric kernel does not.
+\[
+w=\begin{bmatrix}1&2&1\\0&4&1\\0&0&2\end{bmatrix},\qquad
+w_{flip}=\begin{bmatrix}2&0&0\\1&4&0\\1&2&1\end{bmatrix}
+\]
+
+Box mean reduces random noise but blurs edges. Gaussian:
+\[
+G(s,t)=K\exp[-(s^2+t^2)/(2\sigma^2)],\qquad h=G/\sum G
+\]
+Larger $\sigma$/kernel $\Rightarrow$ stronger smoothing. Median: sort neighborhood and select middle; best for salt-and-pepper and preserves edges better.
+
+\key{IP3 Gaussian example, $\sigma=2$:}
+\[
+G=\begin{bmatrix}.7788&.8825&.7788\\.8825&1&.8825\\.7788&.8825&.7788\end{bmatrix},\quad
+\sum G=7.6452,\quad h=G/7.6452
+\]
+Thus corner/edge/center normalized weights are $.1019/.1154/.1308$. Dotting $h$ with neighborhood $\left[\begin{smallmatrix}100&102&98\\101&99&103\\97&100&102\end{smallmatrix}\right]$ gives $100.26\approx100$. Compute unique values by symmetry $\to$ normalize $\to$ weighted sum.
+
+\subsection{[REVIEW] Separable Kernels}
+A nonzero $w$ is separable iff $w=\mathbf c\mathbf r$ (outer product), equivalently rank 1: every row/column is a scalar multiple (all $2\times2$ minors zero). The zero kernel has rank 0 and is also expressible as an outer product. Then
+\[
+w*f=\mathbf c*(\mathbf r*f)
+\]
+For image $M\times N$, kernel $m\times n$:
+\[
+C_{2D}=MNmn,\quad C_{sep}=MN(m+n),\quad S=\frac{mn}{m+n}
+\]
+Square $m\times m$: $S=m/2$, reducing $O(MNm^2)$ to $O(MNm)$. For desired speed-up $S_0$:
+\[
+\frac{m}{2}\ge S_0\Rightarrow m\ge2S_0;\quad \text{thus }10\times\Rightarrow\boxed{m\ge20}
+\]
+Proof by sums: if $w(s,t)=c(s)r(t)$,
+\[
+g=\sum_s c(s)\left[\sum_t r(t)f(x-s,y-t)\right]
+\]
+which is a 1-D row pass followed by a 1-D column pass. Ignore border overhead only when using the theoretical count.
+
+\key{Extract factors (IP3):} choose nonzero pivot $E=w_{ij}$; let $\mathbf c$ be pivot column and $\mathbf r$ be pivot row; then test $w=\mathbf c(\mathbf r/E)$.
+\[
+\begin{bmatrix}1&3&1\\2&6&2\end{bmatrix}
+=\begin{bmatrix}1\\2\end{bmatrix}\begin{bmatrix}1&3&1\end{bmatrix}
+\]
+For $512\times512$ and separable $5\times5$: direct $=512^2(25)=6{,}553{,}600$; separable $=512^2(10)=2{,}621{,}440$; speed-up $=2.5\times$.
+
+\subsection{Sharpening and Edges}
+Four-neighbor Laplacian:
+\[
+\nabla^2f=f(x+1,y)+f(x-1,y)+f(x,y+1)+f(x,y-1)-4f(x,y)
+\]
+Use $g=f+c\nabla^2f$ with sign matching the chosen Laplacian kernel. Unsharp/high-boost:
+\[
+m=f-\bar f,\qquad g=f+km=(1+k)f-k\bar f
+\]
+$k=1$: unsharp; $k>1$: high-boost. Sobel:
+\[
+G_x=\begin{bmatrix}-1&0&1\\-2&0&2\\-1&0&1\end{bmatrix},\quad
+G_y=G_x^T,\quad |\nabla f|\approx|g_x|+|g_y|
+\]
+\key{IP3 checks:} median neighborhood $[50,50,50;50,200,50;60,80,50]$ has median 50. Rounded worksheet Gaussian gives $\bar f=89.982$, $k=1.5$, $g=90.027\approx90$; exact normalized symmetry gives 90.
+
+\section{DIP III: Frequency-Domain Filtering}
+
+\subsection{2-D Sampling and DFT}
+Nyquist independently in each direction:
+\[
+1/\Delta x>2\mu_{\max},\qquad1/\Delta y>2\nu_{\max}
+\]
+\key{IP4 example:} maxima $(60,45)$ Hz require $(f_{s_x},f_{s_y})>(120,90)$ Hz; sampling at $(100,80)$ aliases in both directions. Frequency-bin spacings are $\Delta u=1/(M\Delta x)$, $\Delta v=1/(N\Delta y)$.
+\[
+F(u,v)=\sum_{x=0}^{M-1}\sum_{y=0}^{N-1}f(x,y)e^{-j2\pi(ux/M+vy/N)}
+\]
+\[
+f(x,y)=\frac1{MN}\sum_{u=0}^{M-1}\sum_{v=0}^{N-1}F(u,v)e^{j2\pi(ux/M+vy/N)}
+\]
+\[
+|F|=\sqrt{(\Re F)^2+(\Im F)^2},\quad \phi=\operatorname{atan2}(\Im F,\Re F),\quad F(0,0)=MN\bar f
+\]
+Magnitude gives strength; phase carries structure. Translation changes phase only; $(-1)^{x+y}$ centers DC. Real image: $F(M-u,N-v)=F^*(u,v)$.
+
+\subsection{Convolution, Padding, Workflow}
+DFT multiplication gives circular convolution. For $A\times B$ image and $C\times D$ kernel, linear convolution requires
+\[
+P\ge A+C-1,\qquad Q\ge B+D-1
+\]
+Equal-size shortcut: $P=2M,Q=2N$. \key{IP4:} $128^2*64^2$ needs minimum $191^2$.
+
+\key{Workflow:} pad $\to$ multiply $(-1)^{x+y}$ $\to$ DFT $F$ $\to$ construct centered $H$ $\to$ $G=HF$ $\to$ IDFT $\to$ multiply $(-1)^{x+y}$ $\to$ real part $\to$ crop. Padding prevents wraparound; centering puts radial-filter origin at the middle.
+
+\subsection{Radial Filters}
+On padded $P\times Q$ grid:
+\[
+D(u,v)=\sqrt{(u-P/2)^2+(v-Q/2)^2}
+\]
+\[
+H_{ILP}=\begin{cases}1&D\le D_0\\0&D>D_0\end{cases},\quad
+H_{GLP}=e^{-D^2/(2D_0^2)},\quad
+H_{BLP}=\frac1{1+(D/D_0)^{2n}}
+\]
+High-pass $H_{HP}=1-H_{LP}$; set center to 0. Ideal: most ringing; Gaussian: least; higher Butterworth $n$: sharper/more ringing. Smaller LPF $D_0$: more smoothing.
+
+\key{Butterworth (course padding convention):} pad $256^2\to512^2$, center $(256,256)$; at $(60,60)$, $D=277.19$ and $D_0=50,n=2\Rightarrow H\approx0.0011$.
+
+Costs: spatial $MNmn$; padded FFT $\approx2PQ\log_2(PQ)+PQ$. IP4 rough $2048^2$, $201^2$: $918\times$ FFT speed-up (ignores padding/constants). Prefer FFT for large nonseparable kernels.
+
+\section{DIP IV: Image Compression (Worksheet IP5)}
+
+\subsection{Compression Ratio and Redundancy}
+For original size $b_{raw}$ and compressed size $b_c$:
+\[
+C_R=\frac{b_{raw}}{b_c},\qquad R_D=1-\frac1{C_R}=1-\frac{b_c}{b_{raw}}
+\]
+Compression removes coding, interpixel/spatial, and psychovisual redundancy. Lossless methods recover exact data; lossy methods discard information for higher compression.
+
+\key{IP5 Q1:} $4656\times3492$ 24-bit RGB has
+\[
+b_{raw}=4656(3492)(24)=390{,}210{,}048\text{ bits}=48.776256\text{ MB}
+\]
+For a 5.5323 MB JPEG, $C_R=8.8166:1$ and $R_D=88.66\%$ using decimal MB. State whether MB or MiB is used.
+
+\subsection{Code Length and Entropy}
+For symbols with probabilities $p_i$ and code lengths $l_i$:
+\[
+L_{avg}=\sum_i p_il_i,\qquad b_{coded}=N L_{avg},\qquad
+H=-\sum_i p_i\log_2p_i
+\]
+$H\le L_{avg}<H+1$ for an optimal binary prefix code. For raw $b$ bits/pixel, the zero-memory upper compression limit is $C_{R,\max}=b/H$. A fixed code for $q$ symbols needs $\lceil\log_2q\rceil$ bits/symbol.
+
+\key{IP5 Q2/Q4:} for $p=(.25,.47,.25,.03)$, four symbols need 2 fixed bits, so 8-bit raw gives $4:1$. With code lengths $(2,1,3,3)$:
+\[
+L_{avg}=.25(2)+.47(1)+.25(3)+.03(3)=1.81,
+\quad C_R=8/1.81=4.42:1
+\]
+\[
+H\approx1.664\text{ bpp},\qquad C_{R,\max}=8/H\approx4.81:1
+\]
+
+\subsection{Run-Length Coding (RLE)}
+Encode each run as $(\text{value},\text{length})$. If value uses $b_v$ bits and length $b_l$ bits:
+\[
+b_{RLE}=(\#\text{ runs})(b_v+b_l)
+\]
+Best for long constant runs; poor for noisy/rapidly varying data. \key{IP5 Q3:} a $256\times255$ 8-bit image with each row constant has raw $256(255)(8)=522{,}240$ bits. One 8-bit value + 8-bit run length per row uses $256(16)=4096$ bits, so $C_R=127.5:1$, $R_D=99.216\%$.
+
+\subsection{Huffman Coding}
+\key{Build:} repeatedly merge the two smallest probabilities $\to$ label branches 0/1 $\to$ read root-to-leaf codes. Codes are prefix-free; ties can produce different but equally valid codes. Decode one prefix at a time using the exact table built.
+
+For $p(a_1,\ldots,a_6)=(.10,.40,.06,.10,.04,.30)$, one valid table is
+\[
+a_2=0,\quad a_6=10,\quad a_5=1100,\quad a_3=1101,\quad a_1=1110,\quad a_4=1111
+\]
+with $L_{avg}=2.2$ bits/symbol. Then
+\[
+010100111100=0|10|10|0|1111|0|0
+\Rightarrow a_2a_6a_6a_2a_4a_2a_2.
+\]
+
+\subsection{Arithmetic Coding}
+Assign cumulative source intervals $[C_{low}(a),C_{high}(a))$. Starting from $[L,U)$ with width $W=U-L$:
+\[
+L'=L+W C_{low}(a),\qquad U'=L+W C_{high}(a)
+\]
+Repeat per symbol; decode with known length/end symbol. For $a_1a_2a_3a_3a_4$:
+\[
+\begin{array}{ll}
+\text{Q5 six-symbol model:}&[.03128064,.03129504),\ \text{tag } .03129;\\
+\text{textbook }p=(.2,.2,.4,.2):&[.06752,.0688),\ \text{tag } .068.
+\end{array}
+\]
+
+\section{DIP V: Color Essentials}
+RGB additive/display; CMY(K) subtractive/print; HSI separates intensity.
+\[
+C=1-R,\quad M=1-G,\quad Y=1-B;\qquad K=\min(C,M,Y)
+\]
+If $K\ne1$: $C'=(C-K)/(1-K)$, similarly $M',Y'$; if $K=1$, set $C'=M'=Y'=0$. 24-bit RGB: $2^{24}$ colors; $R=G=B$ gray.
+\[
+I=\frac{R+G+B}{3},\qquad S=1-\frac{3\min(R,G,B)}{R+G+B}
+\]
+\[
+\theta=\cos^{-1}\!\frac{\frac12[(R-G)+(R-B)]}{\sqrt{(R-G)^2+(R-B)(G-B)}},\quad
+H=\begin{cases}\theta&B\le G\\360^\circ-\theta&B>G\end{cases}
+\]
+For grayscale $S=0$, hue undefined. For brightness/HE/smoothing, process HSI $I$ to reduce hue distortion; separate nonlinear RGB mappings can shift hue. Complement $(1-R,1-G,1-B)$; pseudocolor assigns colors to grayscale.
+
+\end{multicols}
+\end{document}
