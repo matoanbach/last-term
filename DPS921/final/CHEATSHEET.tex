@@ -1,0 +1,350 @@
+\documentclass[9pt]{extarticle}
+
+\usepackage[a4paper,margin=0.24in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath,amssymb}
+\usepackage{multicol}
+\usepackage{enumitem}
+\usepackage{array}
+\usepackage{listings}
+\usepackage{titlesec}
+\usepackage[protrusion=true,expansion=false]{microtype}
+
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0.3pt}
+\setlength{\columnsep}{0.14in}
+\setlist[itemize]{nosep,leftmargin=*}
+\setlength{\abovedisplayskip}{2pt}
+\setlength{\belowdisplayskip}{2pt}
+\setlength{\abovedisplayshortskip}{1pt}
+\setlength{\belowdisplayshortskip}{1pt}
+\titleformat{\section}{\normalsize\bfseries}{}{0pt}{}[\vspace{-2pt}\hrule\vspace{2pt}]
+\titleformat{\subsection}{\small\bfseries}{}{0pt}{}
+\titlespacing*{\section}{0pt}{2pt}{1pt}
+\titlespacing*{\subsection}{0pt}{1pt}{0.5pt}
+
+\newcommand{\code}[1]{\texttt{\detokenize{#1}}}
+\newcommand{\qa}[2]{\textbf{Q:} #1\\\textbf{A:} #2\par\vspace{1pt}}
+\newcommand{\tighttable}[1]{\vspace{1pt}{\scriptsize #1}\vspace{1pt}}
+\newcommand{\subhead}[1]{\textbf{#1}\par}
+
+\lstset{
+  basicstyle=\ttfamily\tiny,
+  breaklines=true,
+  columns=fullflexible,
+  keepspaces=true,
+  showstringspaces=false,
+  aboveskip=1pt,
+  belowskip=1pt,
+  frame=single,
+  framerule=0.2pt,
+  framesep=2pt
+}
+
+\begin{document}
+\raggedright
+\footnotesize
+
+\begin{center}
+{\Large \textbf{DPS921 Final Cheatsheet}}\\[-2pt]
+{\small Answer bank + corrected code bank}
+\end{center}
+
+\begin{multicols}{2}
+
+\section{Part A: Answer Bank}
+
+\section{Week 8: Thrust}
+\qa{Why does Thrust simplify GPU programming?}{Thrust provides high-level STL-like algorithms such as \code{sort}, \code{transform}, \code{reduce}, and \code{scan}, so the programmer describes the operation instead of writing kernels, indexing, launches, and temp-memory handling by hand. This gives shorter code and faster development for common data-parallel tasks.}
+
+\qa{What are Thrust's advantages and limits?}{Advantages: concise code, reusable algorithms, easier debugging, and optimized implementations. Limits: less low-level control, possible temporary-memory overhead, and weaker fit for specialized fine-tuned kernels.}
+
+\qa{Why does sorting help many parallel algorithms?}{Sorting organizes data so searching, grouping, duplicate removal, counting, and range queries become easier. After sorting, algorithms can use binary search or bound queries instead of scanning every element, and equal keys become adjacent, which helps aggregation and grouping.}
+
+\qa{How are sorting and searching used together in Thrust?}{A common pattern is \code{thrust::sort} first, then \code{thrust::binary_search}, \code{lower_bound}, or \code{upper_bound} on the sorted range. This supports tasks such as testing membership, locating all equal keys, grouping records by key, or preparing data for reduction.}
+
+\qa{What does a scan produce and where is it useful?}{A prefix-sum or scan produces running totals. Example: input \code{[2,4,3,1]} gives inclusive output \code{[2,6,9,10]}. Scan is a fundamental building block for offsets, compaction, grouping, range-sum queries, histogram placement, and output positioning in parallel algorithms.}
+
+\section{Week 9: CUDA Memory + Optimization}
+\qa{What are threads, blocks, and grids in CUDA?}{A thread is the smallest execution unit and usually handles one element. Threads are grouped into blocks; threads in the same block can share \code{__shared__} memory and synchronize with \code{__syncthreads()}. A grid is the full collection of blocks launched by one kernel call. Hardware executes threads in warps of 32.}
+
+\qa{Why is block size important?}{Block size affects occupancy, warp utilization, and scheduling efficiency. Good choices are usually multiples of 32, often 128, 256, or 512. Too few threads or blocks can leave GPU resources idle; very small blocks increase overhead; a poor block size may reduce occupancy or waste memory bandwidth.}
+
+\qa{Compare global and shared memory.}{Global memory is large and visible to all threads, but it has high latency. Shared memory is small, on-chip, and visible only to threads in the same block, but it is much faster. Shared memory acts like a programmer-managed cache and is most useful when the same data will be reused by several threads in a block.}
+
+\qa{When does shared memory significantly help?}{It helps when data loaded from global memory is reused multiple times, such as tiled matrix multiplication, convolution, stencil operations, reductions, or scans. It usually does not help much for a pure copy where each value is read once and written once, because there is no reuse to amortize the extra load/store and synchronization cost.}
+
+\qa{What does asynchronous execution mean in CUDA?}{The CPU can launch work without waiting for each earlier GPU operation to fully finish. Different streams may overlap kernels with transfers or run independent GPU tasks concurrently.}
+
+\qa{Why can streams help, and why might they not?}{Streams help when transfers and kernels are independent and there is enough work and hardware capacity to overlap them. They may not help much if tasks are small, dependent on each other, limited by one resource, or if stream-management overhead outweighs the benefit.}
+
+\section{Week 10: OpenMP + Race Conditions}
+\qa{What happens when execution enters and exits a parallel region?}{OpenMP uses fork-join. One thread starts, entering \code{\#pragma omp parallel} creates a team, the team executes concurrently, then threads synchronize and join back to one thread.}
+
+\qa{What is the difference between shared and private variables?}{A shared variable is one memory location visible to all threads. A private variable gives each thread its own independent copy. Scope matters because wrong sharing can cause race conditions and wrong results, while excessive sharing also hurts performance due to synchronization or contention.}
+
+\qa{Why is reduction preferred for sums?}{A reduction creates a private copy of the variable for each thread, allows threads to accumulate locally without contention, and combines the partial results at the end. This gives correct results and usually scales better than \code{atomic} or \code{critical}, which synchronize more often.}
+
+\qa{Manual vs implicit partitioning in OpenMP?}{Manual partitioning means the programmer computes \code{start/end} ranges for each thread. It gives control but requires more code and can miss leftover iterations. Implicit partitioning with \code{\#pragma omp parallel for} lets OpenMP divide loop iterations automatically, which is simpler and less error-prone, though it provides less exact control over work distribution.}
+
+\section{Week 11: Loop Parallelism + Performance}
+\qa{Why do dependencies prevent direct loop parallelization?}{Parallel iterations must be independent. If iteration \code{i} needs a value from \code{i-1}, such as \code{A[i] = A[i-1] + 5;}, simultaneous execution can read unfinished values or violate required order.}
+
+\qa{Outer loop, inner loop, or collapse?}{Parallelizing the outer loop is usually best because it has lower scheduling overhead and better locality. Parallelizing the inner loop is useful only when the outer loop has too few iterations. \code{collapse(2)} merges nested loops into one larger iteration space and improves load balance when the outer loop alone does not expose enough parallel work.}
+
+\qa{Static, dynamic, and guided scheduling?}{\code{static} preassigns fixed chunks and is best for regular workloads with similar iteration cost. \code{dynamic} hands out chunks at runtime and is better for irregular workloads, but with higher overhead. \code{guided} starts with larger chunks and gradually shrinks them, trying to balance overhead and load balance for large loops.}
+
+\qa{What is false sharing?}{False sharing happens when threads update different variables that happen to sit on the same cache line. Correctness may remain fine, but cache-line invalidations cause heavy slowdown. Fixes include using private local variables, writing shared results less often, or padding per-thread data so each thread writes to a separate cache line.}
+
+\section{Week 12: Design Patterns + Model Comparison}
+\qa{SPMD vs MPMD?}{SPMD means all workers run the same program on different data. MPMD means different workers may run different programs on different data. MPI supports MPMD naturally because separate processes can run separate executables; OpenMP is more naturally SPMD because all threads live inside one shared-memory program.}
+
+\qa{How can matrix multiplication use the same decomposition with OpenMP, MPI, or CUDA?}{The decomposition idea stays the same: split the output matrix by rows, columns, or blocks. What changes is the execution model. OpenMP maps subproblems to shared-memory CPU threads, MPI maps them to separate processes that exchange data explicitly, and CUDA maps them to many GPU threads or tiles. Same partitioning logic, different mapping and communication mechanism.}
+
+\qa{How is task parallelism implemented in OpenMP, MPI, and CUDA?}{OpenMP tasks are scheduled by the runtime onto threads. MPI uses separate worker processes with explicit messages. CUDA launches kernels where many GPU threads each execute a small piece of the task.}
+
+\qa{How do you choose between MPI, OpenMP, and CUDA for an application?}{Match the hardware and decomposition: distributed multi-node simulation fits MPI+SPMD, shared-memory workstation image processing fits OpenMP loop parallelism, and large matrix/ML GPU work fits CUDA+SPMD.}
+
+\section{Week 13: Load Balancing + Scalability + Debugging}
+\qa{Why is load balancing important?}{Parallel runtime is usually determined by the slowest processor or thread. If one worker gets much more expensive work, others finish early and wait idle.}
+
+\qa{Why does equal task count not guarantee balanced execution?}{Tasks can have very different costs. Two processors may each receive four tasks, but one set may be much heavier. For irregular workloads, balance must consider task cost, not just task count, which is why dynamic scheduling or dynamic load balancing is often better.}
+
+\qa{Why doesn't adding processors always improve performance?}{Scalability is limited by serial work, communication overhead, synchronization overhead, load imbalance, lock contention, cache contention, false sharing, and memory bandwidth limits. Once overhead grows faster than useful computation shrinks, adding processors gives diminishing returns or can even slow the program down.}
+
+\qa{How can MPI scalability be improved when communication becomes a bottleneck?}{Use \code{MPI_Isend()} and \code{MPI_Irecv()} to overlap communication with computation. Also reduce boundaries, combine small messages into fewer larger ones, and reduce synchronization frequency.}
+
+\qa{What is a race condition and why is it hard to reproduce?}{A race condition occurs when multiple threads or processes access shared data without correct synchronization and at least one access is a write. The result depends on timing and scheduling, which vary from run to run, so the bug can appear intermittently. Fixes include \code{atomic}, \code{critical}, locks, reductions, or redesigning to reduce shared updates.}
+
+\qa{How do deadlock and lock order relate?}{Deadlock occurs when threads hold resources while waiting forever for each other, such as one thread locking A then waiting for B while another locks B then waits for A. A standard fix is to acquire locks in a consistent global order and always release them after the protected section.}
+
+\tighttable{\begin{tabular}{@{}p{0.24\columnwidth}p{0.18\columnwidth}p{0.32\columnwidth}@{}}
+Metric & Formula & Meaning \\
+Speedup & \(S = T_1 / T_p\) & How much faster parallel is \\
+Efficiency & \(E = S / p\) & Fraction of hardware used well \\
+Comm. \% & \(C/T \times 100\) & Portion of runtime spent communicating \\
+\end{tabular}}
+
+\tighttable{\begin{tabular}{@{}p{0.22\columnwidth}p{0.5\columnwidth}@{}}
+Load-balance rule & Runtime is \(\max(\text{processor workloads})\) \\
+Static vs dynamic & Equal-cost work: static; irregular work: dynamic \\
+Mandelbrot & Dynamic scheduling/load balancing is preferred \\
+\end{tabular}}
+
+\columnbreak
+
+\section{Part B: Code Bank}
+
+\section{Thrust Patterns}
+\subhead{Sort + Search + Filter}
+\begin{lstlisting}[language=C++]
+#include <thrust/device_vector.h>
+#include <thrust/host_vector.h>
+#include <thrust/sort.h>
+#include <thrust/copy.h>
+#include <thrust/binary_search.h>
+
+struct IsEven {
+    __host__ __device__
+    bool operator()(int x) const { return x % 2 == 0; }
+};
+
+thrust::device_vector<int> v{7,2,9,4,1,8,6};
+int target = 4;
+thrust::sort(v.begin(), v.end());
+bool found = thrust::binary_search(v.begin(), v.end(), target);
+thrust::device_vector<int> even(v.size());
+auto endIt = thrust::copy_if(v.begin(), v.end(), even.begin(), IsEven());
+even.erase(endIt, even.end());
+thrust::host_vector<int> hv = v;
+thrust::host_vector<int> he = even;
+\end{lstlisting}
+
+\subhead{Explicit GPU Policy}
+\begin{lstlisting}[language=C++]
+#include <thrust/reduce.h>
+#include <thrust/execution_policy.h>
+
+thrust::device_vector<int> data(1000, 1);
+int sum = thrust::reduce(thrust::device, data.begin(), data.end(), 0);
+\end{lstlisting}
+
+\subhead{Counting Iterator + Inclusive Scan + Stream}
+\begin{lstlisting}[language=C++]
+#include <cuda_runtime.h>
+#include <thrust/device_vector.h>
+#include <thrust/scan.h>
+#include <thrust/iterator/counting_iterator.h>
+#include <thrust/execution_policy.h>
+
+int N = 6;
+cudaStream_t s;
+cudaStreamCreate(&s);
+thrust::device_vector<int> out(N);
+auto first = thrust::make_counting_iterator(1);
+auto last  = first + N;
+thrust::inclusive_scan(thrust::cuda::par.on(s), first, last, out.begin());
+cudaStreamSynchronize(s);
+thrust::host_vector<int> h = out;
+cudaStreamDestroy(s);
+\end{lstlisting}
+
+\subhead{Thrust Reminder}
+Use \code{thrust::device} for explicit device execution and \code{thrust::cuda::par.on(stream)} for stream-specific async execution.
+
+\section{CUDA Patterns}
+\subhead{1D Kernel Index + Bounds}
+\begin{lstlisting}[language=C++]
+__global__ void kernel(int* A, int N) {
+    int i = blockIdx.x * blockDim.x + threadIdx.x;
+    if (i < N) A[i] = A[i] * 2;
+}
+
+int blockSize = 256;
+int gridSize = (N + blockSize - 1) / blockSize;
+kernel<<<gridSize, blockSize>>>(d_A, N);
+\end{lstlisting}
+
+\subhead{2D Matrix Addition}
+\begin{lstlisting}[language=C++]
+__global__ void addMatrix(const int* A, const int* B, int* C, int M, int N) {
+    int row = blockIdx.y * blockDim.y + threadIdx.y;
+    int col = blockIdx.x * blockDim.x + threadIdx.x;
+    if (row < M && col < N) {
+        int idx = row * N + col;
+        C[idx] = A[idx] + B[idx];
+    }
+}
+
+dim3 block(16, 16);
+dim3 grid((N + block.x - 1) / block.x,
+          (M + block.y - 1) / block.y);
+addMatrix<<<grid, block>>>(d_A, d_B, d_C, M, N);
+\end{lstlisting}
+
+\subhead{Shared-Memory Copy Kernel}
+\begin{lstlisting}[language=C++]
+__global__ void copyKernel(const int* input, int* output, int N) {
+    __shared__ int temp[256];
+    int tid = threadIdx.x;
+    int i = blockIdx.x * blockDim.x + tid;
+
+    if (i < N) temp[tid] = input[i];
+    __syncthreads();
+    if (i < N) output[i] = temp[tid];
+}
+\end{lstlisting}
+
+\subhead{Shared Memory Rule}
+Load from global once, synchronize, then reuse. Helpful when values are reused; weak benefit for simple copy-only kernels. \code{__syncthreads()} is required when threads read data written by other threads in the block.
+
+\subhead{Memory + Warp Reminders}
+Registers: fastest/private. Shared: fast/block-local. Constant: read-only, best when threads read same address. Global: largest/slowest. Coalescing = adjacent threads, adjacent addresses. Divergence = one warp, different branches.
+
+\section{OpenMP Patterns}
+\subhead{Parallel Region}
+\begin{lstlisting}[language=C++]
+#include <omp.h>
+
+#pragma omp parallel
+{
+    int id = omp_get_thread_num();
+    int nt = omp_get_num_threads();
+}
+\end{lstlisting}
+
+\subhead{Reduction for Sum}
+\begin{lstlisting}[language=C++]
+long long sum = 0;
+#pragma omp parallel for reduction(+:sum)
+for (int i = 0; i < N; i++) {
+    sum += A[i];
+}
+\end{lstlisting}
+
+\subhead{Manual Partitioning}
+\begin{lstlisting}[language=C++]
+long long sum = 0;
+#pragma omp parallel
+{
+    int id = omp_get_thread_num();
+    int nt = omp_get_num_threads();
+    int chunk = N / nt;
+    int start = id * chunk;
+    int end = (id == nt - 1) ? N : start + chunk;
+    long long localSum = 0;
+
+    for (int i = start; i < end; i++) localSum += A[i];
+
+    #pragma omp atomic
+    sum += localSum;
+}
+\end{lstlisting}
+
+\subhead{Nested Loop + Collapse}
+\begin{lstlisting}[language=C++]
+#pragma omp parallel for collapse(2)
+for (int i = 0; i < N; i++) {
+    for (int j = 0; j < M; j++) {
+        A[i][j] = i + j;
+    }
+}
+\end{lstlisting}
+
+\subhead{Scheduling}
+\begin{lstlisting}[language=C++]
+#pragma omp parallel for schedule(static)
+for (int i = 0; i < N; i++) { ... }
+
+#pragma omp parallel for schedule(dynamic, 4)
+for (int i = 0; i < N; i++) { ... }
+
+#pragma omp parallel for schedule(guided)
+for (int i = 0; i < N; i++) { ... }
+\end{lstlisting}
+
+\subhead{Dependency Example: Not Directly Parallel}
+\begin{lstlisting}[language=C++]
+for (int i = 1; i < N; i++) {
+    A[i] = A[i - 1] + B[i];
+}
+\end{lstlisting}
+
+\subhead{False Sharing Fix}
+\begin{lstlisting}[language=C++]
+struct alignas(64) PaddedSum { long long value; };
+PaddedSum partial[8];
+
+#pragma omp parallel num_threads(8)
+{
+    int id = omp_get_thread_num();
+    long long local = 0;
+    for (int i = 0; i < N; i++) local += i;
+    partial[id].value = local;
+}
+\end{lstlisting}
+
+\section{Debug Checklist}
+\tighttable{\begin{tabular}{@{}p{0.28\columnwidth}p{0.53\columnwidth}@{}}
+Check & Typical fix \\
+Shared sum race & Use \code{reduction}, \code{atomic}, or \code{critical} \\
+MPI tag mismatch & Sender and receiver tags must match \\
+Wrong \code{cudaMemcpy} direction & Host to device before kernel, device to host after \\
+Missing bounds check & Add \code{if (i < N)} or 2D equivalent \\
+Missing \code{__syncthreads()} & Add after shared-memory load when data is reused \\
+False sharing & Use local vars or padding \\
+Deadlock & Consistent lock order, always unlock \\
+Equal tasks but poor scaling & Consider task cost and dynamic scheduling \\
+\end{tabular}}
+
+\tighttable{\begin{tabular}{@{}p{0.27\columnwidth}p{0.2\columnwidth}p{0.32\columnwidth}@{}}
+App & Pick & Why \\
+Weather sim & MPI+SPMD & Multi-node grid + boundary exchange \\
+Image processing & OpenMP & Independent pixel/loop work \\
+Matrix/ML ops & CUDA+SPMD & Many identical GPU computations \\
+\end{tabular}}
+
+\end{multicols}
+
+\end{document}
