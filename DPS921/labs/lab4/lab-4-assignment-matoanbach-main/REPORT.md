@@ -152,11 +152,17 @@ Summary data is stored in `timing_data.csv`.
 
 #### Visualizations: no-opt (O0)
 
-![](figures/q1_o0_time_vs_threads.png){ width=95% }
+\begin{center}
+\includegraphics[width=0.82\linewidth]{figures/q1_o0_time_vs_threads.png}
+\end{center}
 
-![](figures/q1_o0_speedup_vs_threads.png){ width=95% }
+\begin{center}
+\includegraphics[width=0.82\linewidth]{figures/q1_o0_speedup_vs_threads.png}
+\end{center}
 
-![](figures/q1_o0_efficiency_vs_threads.png){ width=95% }
+\begin{center}
+\includegraphics[width=0.82\linewidth]{figures/q1_o0_efficiency_vs_threads.png}
+\end{center}
 
 #### OpenMP Results: max-opt (O3)
 
@@ -177,11 +183,17 @@ Summary data is stored in `timing_data.csv`.
 
 #### Visualizations: max-opt (O3)
 
-![](figures/q1_o3_time_vs_threads.png){ width=95% }
+\begin{center}
+\includegraphics[width=0.82\linewidth]{figures/q1_o3_time_vs_threads.png}
+\end{center}
 
-![](figures/q1_o3_speedup_vs_threads.png){ width=95% }
+\begin{center}
+\includegraphics[width=0.82\linewidth]{figures/q1_o3_speedup_vs_threads.png}
+\end{center}
 
-![](figures/q1_o3_efficiency_vs_threads.png){ width=95% }
+\begin{center}
+\includegraphics[width=0.82\linewidth]{figures/q1_o3_efficiency_vs_threads.png}
+\end{center}
 
 ### Accuracy Observation
 

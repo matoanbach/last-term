@@ -126,8 +126,18 @@ void matrixMultiplyCPU(float *A,
                        float *C,
                        int N)
 {
-    // TODO:
-    // Compute C = A × B
+    for (int row = 0; row < N; row++)
+    {
+        for (int col = 0; col < N; col++)
+        {
+            float sum = 0.0f;
+            for (int k = 0; k < N; k++)
+            {
+                sum += A[row * N + k] * B[k * N + col];
+            }
+            C[row * N + col] = sum;
+        }
+    }
 }
 ```
 
@@ -185,8 +195,17 @@ Run once or twice for practice. Formal benchmarking will be done in the Lab 3 as
 **Answer:**
 
 ```text
-N = 256 -> 61.7133 ms
-N = 512 -> 490.97 ms
+Run 1:
+N = 256 -> 32.8111 ms
+N = 512 -> 265.703 ms
+
+Run 2:
+N = 256 -> 32.9329 ms
+N = 512 -> 269.873 ms
+
+Average used for reporting:
+N = 256 -> 32.87 ms
+N = 512 -> 267.79 ms
 ```
 
 ## Reflection Questions
@@ -375,10 +394,12 @@ void vectorAdd(float *A,
                float *C,
                int N)
 {
-    // TODO:
-    // Compute the global thread index.
-    // Ensure the thread is within the vector bounds.
-    // Compute one element of the output vector.
+    int i = blockIdx.x * blockDim.x + threadIdx.x;
+
+    if (i < N)
+    {
+        C[i] = A[i] + B[i];
+    }
 }
 ```
 

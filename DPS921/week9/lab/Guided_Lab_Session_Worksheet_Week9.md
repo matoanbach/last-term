@@ -146,11 +146,13 @@ Verify that the output matches the input.
 **Answer:**
 
 ```text
-Expected verification for a correct program:
+Observed output:
 
-N = 1024  -> PASS (output matches input)
-N = 16384 -> PASS (output matches input)
+N = 1024  | Correctness = PASS
+N = 16384 | Correctness = PASS
 ```
+
+Screenshot evidence: `pics/image (16).png`
 
 ## Reflection Questions
 
@@ -213,6 +215,15 @@ cudaEventElapsedTime(&ms, start, stop);
 
 printf("Kernel Time = %f ms\n", ms);
 ```
+
+**Observed output:**
+
+```text
+N = 1024  | Kernel Time = 0.165888 ms
+N = 16384 | Kernel Time = 0.007168 ms
+```
+
+Screenshot evidence: `pics/image (15).png`
 
 ## Reflection Questions
 
